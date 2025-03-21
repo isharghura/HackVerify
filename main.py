@@ -6,6 +6,7 @@ test_url = "https://cuhacking6.devpost.com"
 all_project_links = []
 pg_num = 1
 
+# scrape through devpost to find all projects
 while True:
     print(f"getting all projects on page {pg_num}")
 
@@ -28,6 +29,7 @@ while True:
 
 all_github_links = []
 
+# scrape through each project
 for project_link in all_project_links:
     result = requests.get(project_link)
     project = BeautifulSoup(result.text, "html.parser")
