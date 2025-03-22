@@ -18,7 +18,7 @@ class handler(BaseHTTPRequestHandler):
             max_pages = 5
 
             start_time = time.time()
-            time_limit = 8
+            time_limit = 20
 
             # scrape through devpost to find all projects
             while pg_num < max_pages:
