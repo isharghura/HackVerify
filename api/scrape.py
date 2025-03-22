@@ -10,7 +10,7 @@ class handler(BaseHTTPRequestHandler):
 
         test_url = "https://cuhacking6.devpost.com"
         all_project_links = []
-        pg_num = 1
+        pg_num = 4
 
         # scrape through devpost to find all projects
         while True:
