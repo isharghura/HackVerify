@@ -21,7 +21,7 @@ class handler(BaseHTTPRequestHandler):
         email = data.get("email")
 
         try:
-            supabase.table("organizers_interested").insert(
+            supabase.table("interested_organizers").insert(
                 {"linkedin": linkedin, "devpost": devpost, "email": email}
             ).execute()
 
