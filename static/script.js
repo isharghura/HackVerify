@@ -11,7 +11,7 @@ document.getElementById("organizerForm").addEventListener("submit", async (event
     }
 
     try {
-        const response = await fetch("/api/submit", {
+        const response = await fetch("/api/submissions", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -20,7 +20,7 @@ document.getElementById("organizerForm").addEventListener("submit", async (event
         });
 
         const data = await response.json();
-        alert("Thanks, reviewing your application!");
+        alert("Thanks, reviewing your submission!");
     } catch (error) {
         console.error("Error:", error);
         alert("Something happened, please try again!");
