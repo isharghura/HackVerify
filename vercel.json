@@ -31,6 +31,10 @@
             "dest": "/api/scrape.py"
         },
         {
+            "src": "/api/submissions",
+            "dest": "/api/submissions.py"
+        },
+        {
             "src": "/templates/(.*)",
             "dest": "/templates/$1"
         },
