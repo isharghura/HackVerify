@@ -7,9 +7,21 @@
         {
             "src": "api/scrape.py",
             "use": "@vercel/python"
+        },
+        {
+            "src": "api/test.py",
+            "use": "@vercel/python"
         }
     ],
     "routes": [
+        {
+            "src": "/api/test",
+            "dest": "/api/test.py"
+        },
+        {
+            "src": "/api/scrape",
+            "dest": "/api/scrape.py"
+        },
         {
             "src": "/static/(.*)",
             "dest": "/static/$1"
