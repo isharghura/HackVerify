@@ -95,7 +95,7 @@ class handler(BaseHTTPRequestHandler):
                         f"could not scrape {project_link}: {str(e)}"
                     )
             self.wfile.write(
-                f"processed {len(github_link)} projects in {time.time().start_time:.2f} seconds \n\n".encode()
+                f"processed {len(github_link)} projects in {time.time()-start_time:.2f} seconds \n\n".encode()
             )
             self.wfile.write(str(all_github_links).encode())
             return
