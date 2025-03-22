@@ -1,0 +1,26 @@
+{
+    "builds": [
+        {
+            "src": "static/index.html",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "api/scrape.py",
+            "use": "@vercel/python"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/static/(.*)",
+            "dest": "/static/$1"
+        },
+        {
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
+        },
+        {
+            "src": "/",
+            "dest": "/static/index.html"
+        }
+    ]
+}
