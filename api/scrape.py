@@ -2,6 +2,7 @@ from http.server import BaseHTTPRequestHandler
 from bs4 import BeautifulSoup
 import requests
 import json
+import time
 
 
 class handler(BaseHTTPRequestHandler):
@@ -14,34 +15,63 @@ class handler(BaseHTTPRequestHandler):
             test_url = "https://cuhacking6.devpost.com"
             all_project_links = []
             pg_num = 1
+            max_pages = 5
+
+            start_time = time.time()
+            time_limit = 8
 
             # scrape through devpost to find all projects
-            try:
+            while pg_num < max_pages:
+                if time.time() - start_time > time_limit:
+                    self.wfile.write(
+                        f"reached time limit after processing {pg_num-1} pages: ".encode()
+                    )
+                    break
+
                 print(f"getting all projects on page {pg_num}")
-
                 proj_gallery_url = f"{test_url}/project-gallery?page={pg_num}"
-                result = requests.get(proj_gallery_url)
-                gallery = BeautifulSoup(result.text, "html.parser")
 
-                # project link location
-                curr_project_links = gallery.find_all(
-                    "a", class_="block-wrapper-link fade link-to-software"
-                )
+                try:
+                    result = requests.get(proj_gallery_url)
+                    gallery = BeautifulSoup(result.text, "html.parser")
 
-                for link in curr_project_links:
-                    all_project_links.append(link["href"])
+                    # project link location
+                    curr_project_links = gallery.find_all(
+                        "a", class_="block-wrapper-link fade link-to-software"
+                    )
 
-                pg_num += 1
+                    if not curr_project_links:
+                        print(f"No projects on page {pg_num}")
+                        break
 
-            except Exception as e:
-                self.wfile.write(f"could not get projects: {str(e)}".encode())
-                return
+                    for link in curr_project_links:
+                        all_project_links.append(link["href"])
+
+                    pg_num += 1
+
+                except Exception as e:
+                    self.wfile.write(
+                        f"error on page {pg_num}: {str(e)}, processing now".encode()
+                    )
+                    break
+
+            print(f"found {len(all_project_links)} projects")
+            self.wfile.write(
+                f"found {len(all_project_links)} projects across {pg_num-1} pages\n".encode()
+            )
 
             all_github_links = []
+            max_projects = min(len(all_project_links), 75)
 
-            # scrape through each project
-            for project_link in all_project_links:
+            for i, project_link in enumerate(all_project_links[:max_projects]):
+                if time.time() - start_time > time_limit:
+                    self.wfile.write(
+                        f"reached time limit after processing {pg_num-1} pages: ".encode()
+                    )
+                    break
+
                 github_link = None
+                # scrape through each project
                 try:
                     result = requests.get(project_link)
                     project = BeautifulSoup(result.text, "html.parser")
@@ -64,7 +94,9 @@ class handler(BaseHTTPRequestHandler):
                     all_github_links.append(
                         f"could not scrape {project_link}: {str(e)}"
                     )
-
+            self.wfile.write(
+                f"processed {len(github_link)} projects in {time.time().start_time:.2f} seconds \n\n".encode()
+            )
             self.wfile.write(str(all_github_links).encode())
             return
 
