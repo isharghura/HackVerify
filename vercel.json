@@ -13,7 +13,7 @@
             "use": "@vercel/python"
         },
         {
-            "src": "api/applications.py",
+            "src": "api/submissions.py",
             "use": "@vercel/python"
         },
         {
