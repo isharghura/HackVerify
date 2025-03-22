@@ -11,6 +11,10 @@
         {
             "src": "api/test.py",
             "use": "@vercel/python"
+        },
+        {
+            "src": "static/styles.css",
+            "use": "@vercel/static"
         }
     ],
     "routes": [
@@ -33,6 +37,10 @@
         {
             "src": "/",
             "dest": "/templates/index.html"
+        },
+        {
+            "src": "/static/(.*)",
+            "dest": "/static/$1"
         }
     ]
 }
