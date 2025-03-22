@@ -1,7 +1,7 @@
 {
     "builds": [
         {
-            "src": "static/index.html",
+            "src": "templates/index.html",
             "use": "@vercel/static"
         },
         {
@@ -23,8 +23,8 @@
             "dest": "/api/scrape.py"
         },
         {
-            "src": "/static/(.*)",
-            "dest": "/static/$1"
+            "src": "/templates/(.*)",
+            "dest": "/templates/$1"
         },
         {
             "src": "/api/(.*)",
@@ -32,7 +32,7 @@
         },
         {
             "src": "/",
-            "dest": "/static/index.html"
+            "dest": "/templates/index.html"
         }
     ]
 }
