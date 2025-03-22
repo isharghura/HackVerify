@@ -13,6 +13,10 @@
             "use": "@vercel/python"
         },
         {
+            "src": "api/applications.py",
+            "use": "@vercel/python"
+        },
+        {
             "src": "static/styles.css",
             "use": "@vercel/static"
         }
