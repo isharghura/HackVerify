@@ -19,6 +19,10 @@
         {
             "src": "static/styles.css",
             "use": "@vercel/static"
+        },
+        {
+            "src": "static/script.js",
+            "use": "@vercel/static"
         }
     ],
     "routes": [
