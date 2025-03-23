@@ -21,9 +21,15 @@ class handler(BaseHTTPRequestHandler):
         email = data.get("email")
 
         try:
-            supabase.table("interested_organizers").insert(
-                {"linkedin": linkedin, "devpost": devpost, "email": email}
-            ).execute()
+            try:
+                response = (
+                    supabase.table("interested_organizers")
+                    .insert({"linkedin": linkedin, "devpost": devpost, "email": email})
+                    .execute()
+                )
+                print("response:", response)
+            except Exception as e:
+                print("error:", e)
 
             self.send_response(200)
             self.send_header("Content-type", "application/json")
