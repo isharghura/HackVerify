@@ -1,7 +1,7 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
-    color: #333;
+    background-color: #121212;
+        color: #e0e0e0;
     margin: 0;
     padding: 0;
     display: flex;
@@ -11,10 +11,10 @@ body {
 }
 
 .container {
-    background-color: #fff;
+    background-color: #1e1e1e;
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     max-width: 400px;
     width: 100%;
 }
@@ -27,12 +27,12 @@ header {
 header h1 {
     font-size: 2rem;
     margin: 0;
-    color: #2c3e50;
+    color: #ffffff;
 }
 
 header p {
     font-size: 1rem;
-    color: #7f8c8d;
+    color: #b0b0b0;
     margin: 0.5rem 0 0;
 }
 
@@ -47,7 +47,7 @@ form {
 
 label {
     font-size: 0.9rem;
-    color: #2c3e50;
+    color: #e0e0e0;
     margin-bottom: 0.5rem;
     display: block;
 }
@@ -55,10 +55,12 @@ label {
 input {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
+    border: 1px solid #444;
     border-radius: 4px;
     font-size: 1rem;
     box-sizing: border-box;
+    background-color: #2d2d2d;
+        color: #e0e0e0;
 }
 
 input:focus {
