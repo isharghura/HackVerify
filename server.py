@@ -1,14 +1,6 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
-from supabase import create_client, Client
-from dotenv import load_dotenv
-import os
-
-load_dotenv(".env.local")
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+from api.submissions import handle_submission
 
 
 class MyHandler(BaseHTTPRequestHandler):
@@ -35,30 +27,12 @@ class MyHandler(BaseHTTPRequestHandler):
             post_data = self.rfile.read(content_length)
             data = json.loads(post_data)
 
-            linkedin = data.get("linkedin")
-            devpost = data.get("devpost")
-            email = data.get("email")
+            response, status_code = handle_submission(data)
 
-            try:
-                response = (
-                    supabase.table("interested_organizers")
-                    .insert({"linkedin": linkedin, "devpost": devpost, "email": email})
-                    .execute()
-                )
-                print("Insert response:", response)
-
-                self.send_response(200)
-                self.send_header("Content-type", "application/json")
-                self.end_headers()
-                self.wfile.write(
-                    json.dumps({"message": "Submission successful!"}).encode()
-                )
-            except Exception as e:
-                print("Insert error:", e)
-                self.send_response(500)
-                self.send_header("Content-type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            self.send_response(status_code)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(response).encode())
         else:
             self.send_error(404, "Endpoint Not Found")
 
