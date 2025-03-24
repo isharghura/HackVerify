@@ -38,45 +38,63 @@ def index():
 def linkedin_auth():
     auth_url = (
         f"https://www.linkedin.com/oauth/v2/authorization?"
-        f"response_type=code&client_id={LINKEDIN_CLIENT_ID}&"
-        f"redirect_uri={LINKEDIN_REDIRECT_URI}&scope=r_liteprofile"
+        f"response_type=code&"
+        f"client_id={LINKEDIN_CLIENT_ID}&"
+        f"redirect_uri={LINKEDIN_REDIRECT_URI}&"
+        f"scope=openid%20profile%20email&"
+        f"state=anti_csrf_token"
     )
     return redirect(auth_url)
 
 
 @app.route("/auth/linkedin/callback")
 def linkedin_callback():
-    # get authorization code from the callback
-    code = request.args.get("code")
+    try:
+        code = request.args.get("code")
+        token_response = requests.post(
+            "https://www.linkedin.com/oauth/v2/accessToken",
+            data={
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": LINKEDIN_REDIRECT_URI,
+                "client_id": LINKEDIN_CLIENT_ID,
+                "client_secret": LINKEDIN_CLIENT_SECRET,
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        token_data = token_response.json()
 
-    # exchange code for an access token
-    token_url = "https://www.linkedin.com/oauth/v2/accessToken"
-    token_data = {
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": LINKEDIN_REDIRECT_URI,
-        "client_id": LINKEDIN_CLIENT_ID,
-        "client_secret": LINKEDIN_CLIENT_SECRET,
-    }
-    token_response = requests.post(token_url, data=token_data)
-    access_token = token_response.json().get("access_token")
+        if "error" in token_data:
+            return f"LinkedIn token error: {token_data['error_description']}", 400
 
-    # fetch user's linkedin
-    profile_url = "https://api.linkedin.com/v2/me"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    profile_response = requests.get(profile_url, headers=headers)
-    profile_data = profile_response.json()
+        access_token = token_data["access_token"]
 
-    # get linkedin username
-    linkedin_username = profile_data.get("vanityName")
+        profile_response = requests.get(
+            "https://api.linkedin.com/v2/userinfo",
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "X-Restli-Protocol-Version": "2.0.0",
+            },
+        )
+        profile_data = profile_response.json()
 
-    # upload user's linkedin username and access token to db
-    supabase.table("users").upsert(
-        {"linkedin_username": linkedin_username, "access_token": access_token}
-    ).execute()
+        if "error" in profile_data:
+            return f"LinkedIn API error: {profile_data['message']}", 400
 
-    # redirect the user to dashboard
-    return redirect(f"/dashboard?username={linkedin_username}")
+        user_data = {
+            "linkedin_id": profile_data["sub"],
+            "full_name": profile_data.get("name", ""),
+            "email": profile_data.get("email", ""),
+            "access_token": access_token,
+        }
+
+        supabase.table("users").upsert(user_data).execute()
+
+        return redirect(f"/dashboard?id={profile_data['sub']}")
+
+    except Exception as e:
+        print("Error:", str(e))
+        return "Authentication failed", 500
 
 
 # dashboard route
