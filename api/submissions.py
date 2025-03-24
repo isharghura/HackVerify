@@ -13,12 +13,11 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def handle_submission(data):
     linkedin = data.get("linkedin")
     devpost = data.get("devpost")
-    email = data.get("email")
 
     try:
         response = (
             supabase.table("interested_organizers")
-            .insert({"linkedin": linkedin, "devpost": devpost, "email": email})
+            .insert({"linkedin": linkedin, "devpost": devpost})
             .execute()
         )
         return {"message": "Submission successful!"}, 200
