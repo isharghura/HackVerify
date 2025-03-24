@@ -18,6 +18,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
 LINKEDIN_REDIRECT_URI = "http://localhost:8000/auth/linkedin/callback"
+# LINKEDIN_REDIRECT_URI = "https://hackverify.com/auth/linkedin/callback"
 
 
 # server static files
