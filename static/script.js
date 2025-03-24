@@ -26,3 +26,12 @@ document.getElementById("organizerForm").addEventListener("submit", async (event
         alert("Something happened, please try again!");
     }
 });
+
+fetch("/dashboard")
+    .then(response => {
+        if (response.status === 403) {
+            alert("You don't have an account yet, we need to verify that you are a hackathon organizer first! Submit your info at https://www.hackverify.com");
+        } else {
+            console.log("Welcome to the dashboard!");
+        }
+    });
