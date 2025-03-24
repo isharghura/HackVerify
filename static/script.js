@@ -3,9 +3,8 @@ document.getElementById("organizerForm").addEventListener("submit", async (event
 
     const linkedin = document.getElementById("linkedin").value;
     const devpost = document.getElementById("devpost").value;
-    const email = document.getElementById("email").value;
 
-    if (!linkedin || !devpost || !email) {
+    if (!linkedin || !devpost) {
         alert("Please fill in all fields!");
         return;
     }
@@ -16,7 +15,7 @@ document.getElementById("organizerForm").addEventListener("submit", async (event
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ linkedin, devpost, email }),
+            body: JSON.stringify({ linkedin, devpost }),
         });
 
         const data = await response.json();
@@ -41,7 +40,17 @@ function checkDashboardAccess() {
         });
 }
 
-document.getElementById("loginButton").addEventListener("click", (event) => {
+document.getElementById("loginButton").addEventListener("click", async (event) => {
     event.preventDefault();
+
+    const email = localStorage.getItem("user_email");
+    if (email) {
+        const response = await fetch(`/check-auth?email=${encodeURIComponent(email)}`);
+        if (response.ok) {
+            window.location.href = "/dashboard";
+            return;
+        }
+    }
+
     window.location.href = "/auth/linkedin";
 });
