@@ -1,9 +1,9 @@
-from flask import Flask, redirect, request, send_from_directory
-import json
+from flask import Flask, redirect, request, send_from_directory, render_template
 import os
 import requests
 from supabase import create_client, Client
 from dotenv import load_dotenv
+from datetime import datetime, timedelta
 
 load_dotenv(".env.local")
 
@@ -17,9 +17,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # linkedin oauth
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
-LINKEDIN_REDIRECT_URI = "http://localhost:8000/auth/linkedin/callback"
-# LINKEDIN_REDIRECT_URI = "https://hackverify.com/auth/linkedin/callback"
-
+LINKEDIN_REDIRECT_URI = os.getenv("LINKEDIN_REDIRECT_URI")
 
 # server static files
 @app.route("/static/<path:filename>")
@@ -62,7 +60,12 @@ def linkedin_callback():
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
+
         token_data = token_response.json()
+        refresh_token = token_data.get("refresh_token")
+        expires_in = token_data.get("expires_in", 3600)
+
+        expires_at = datetime.now() + timedelta(seconds=expires_in)
 
         if "error" in token_data:
             return f"LinkedIn token error: {token_data['error_description']}", 400
@@ -82,15 +85,20 @@ def linkedin_callback():
             return f"LinkedIn API error: {profile_data['message']}", 400
 
         user_data = {
+            "email": profile_data.get("email", ""),
             "linkedin_id": profile_data["sub"],
             "full_name": profile_data.get("name", ""),
-            "email": profile_data.get("email", ""),
             "access_token": access_token,
+            "refresh_token": refresh_token,
+            "expires_at": expires_at.isoformat(),
         }
 
-        supabase.table("users").upsert(user_data).execute()
+        supabase.table("users").upsert(
+            user_data,
+            on_conflict="linkedin_id",  # update if linkedin_id exists
+        ).execute()
 
-        return redirect(f"/dashboard?id={profile_data['sub']}")
+        return redirect(f"/dashboard?email={profile_data.get('email')}")
 
     except Exception as e:
         print("Error:", str(e))
@@ -100,16 +108,55 @@ def linkedin_callback():
 # dashboard route
 @app.route("/dashboard")
 def dashboard():
-    linkedin_username = request.args.get("username")
+    user_email = request.args.get("email")
 
-    # does the user have access?
-    if linkedin_username in ["ishar-ghura"]:
-        return "Welcome to the dashboard!"
-    else:
-        return (
-            "You don't have an account yet, we need to verify that you are a hackathon organizer first! Submit your info at https://www.hackverify.com",
-            403,
-        )
+    response = supabase.table("users").select("*").eq("email", user_email).execute()
+
+    if not response.data:
+        return "User not found", 404
+
+    user_data = response.data[0]
+
+    return render_template("dashboard.html", user=user_data)
+
+
+@app.route("/check-auth")
+def check_auth():
+    email = request.args.get("email")
+    if not email:
+        return "Email required", 400
+
+    user = supabase.table("users").select("*").eq("email", email).execute().data[0]
+
+    if not user:
+        return redirect("/auth/linkedin")
+
+    # does token need refresh?
+    if datetime.now() > datetime.fromisoformat(user["expires_at"]):
+        try:
+            token_response = requests.post(
+                "https://www.linkedin.com/oauth/v2/accessToken",
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": user["refresh_token"],
+                    "client_id": LINKEDIN_CLIENT_ID,
+                    "client_secret": LINKEDIN_CLIENT_SECRET,
+                },
+            )
+            token_data = token_response.json()
+            # update user tokens in db
+            supabase.table("users").update(
+                {
+                    "access_token": token_data["access_token"],
+                    "expires_at": (
+                        datetime.now() + timedelta(seconds=token_data["expires_in"])
+                    ).isoformat(),
+                }
+            ).eq("email", email).execute()
+        except:
+            return redirect("/auth/linkedin")
+
+    return {"status": "authenticated"}
 
 
 # handle form submissions
