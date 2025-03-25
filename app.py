@@ -1,5 +1,6 @@
 from flask import (
     Flask,
+    jsonify,
     redirect,
     request,
     send_from_directory,
@@ -227,47 +228,43 @@ def check_auth():
 # handle form submissions
 @app.route("/api/submissions", methods=["POST"])
 def submissions():
-    # is user logged in
+    # is user logged in?
     if "user_email" not in session:
-        return {"error": "Unauthorized"}, 401
+        return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        user_data = (
+        data = request.get_json()
+        if not data or "devpost" not in data:
+            return jsonify({"error": "Devpost link is required"}), 400
+
+        user_response = (
             supabase.table("users")
             .select("email, linkedin_id, full_name")
             .eq("email", session["user_email"])
             .execute()
-            .data
         )
 
-        if not user_data:
-            return {"error": "User not found"}, 404
+        if not user_response.data:
+            return jsonify({"error": "User not found"}), 404
 
-        user = user_data[0]
-        data = request.get_json()
-        devpost = data.get("devpost")
+        user = user_response.data[0]
 
-        if not devpost:
-            return {"error": "Devpost link is required"}, 400
+        submission_data = {
+            "devpost": data["devpost"],
+            "email": user["email"],
+            "linkedin": f"https://linkedin.com/in/{user['linkedin_id']}",
+            "name": user.get("full_name", ""),
+        }
 
         response = (
-            supabase.table("interested_organizers")
-            .insert(
-                {
-                    "linkedin": f"https://www.linkedin.com/in/{user['linkedin_id']}",
-                    "devpost": devpost,
-                    "email": user["email"],
-                    "name": user["full_name"],
-                }
-            )
-            .execute()
+            supabase.table("interested_organizers").insert(submission_data).execute()
         )
 
-        return {"message": "Submission successful!"}, 200
+        return jsonify({"message": "Submission successful!"}), 200
 
     except Exception as e:
         app.logger.error(f"Submission error: {str(e)}")
-        return {"error": "Internal server error"}, 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # run flask app
