@@ -1,6 +1,10 @@
 {
     "builds": [
         {
+            "src": "api/submissions.py",
+            "use": "@vercel/python"
+        },
+        {
             "src": "templates/index.html",
             "use": "@vercel/static"
         },
@@ -25,11 +29,19 @@
             "use": "@vercel/static"
         },
         {
-            "src": "static/script.js",
+            "src": "static/dashboard.js",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "static/login.js",
             "use": "@vercel/static"
         }
     ],
     "routes": [
+        {
+            "src": "/api/submissions",
+            "dest": "/api/submissions.py"
+        },
         {
             "src": "/api/test",
             "dest": "/api/test.py"
