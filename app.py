@@ -126,7 +126,7 @@ def linkedin_callback():
 
         # set up a session
         session.clear()
-        session["user_email"] = profile_data.get("email")
+        session["linkedin_id"] = profile_data.get("sub")
         session["access_token"] = access_token
         session.permanent = True
 
@@ -140,13 +140,13 @@ def linkedin_callback():
 # dashboard route
 @app.route("/dashboard")
 def dashboard():
-    if "user_email" not in session:
+    if "linkedin_id" not in session:
         return redirect("/auth/linkedin")
     try:
         response = (
             supabase.table("users")
             .select("*")
-            .eq("email", session["user_email"])
+            .eq("linkedin_id", session["linkedin_id"])
             .execute()
         )
 
@@ -164,14 +164,14 @@ def dashboard():
 def check_auth():
     try:
         # is user in a session
-        if "user_email" not in session:
-            return {"status": "unauthenticated"}, 401
+        if "linkedin_id" not in session:
+            return redirect("/auth/linkedin")
 
         # retrieve user
         user_data = (
             supabase.table("users")
             .select("*")
-            .eq("email", session["user_email"])
+            .eq("linkedin_id", session["linkedin_id"])
             .execute()
             .data
         )
@@ -208,7 +208,7 @@ def check_auth():
                         "access_token": token_data["access_token"],
                         "expires_at": expires_at.isoformat(),
                     }
-                ).eq("email", session["user_email"]).execute()
+                ).eq("linkedin_id", session["linkedin_id"]).execute()
 
                 # update session with new token
                 session["access_token"] = token_data["access_token"]
@@ -235,8 +235,8 @@ def check_auth():
 @app.route("/api/submissions", methods=["POST"])
 def submissions():
     # is user logged in?
-    if "user_email" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+    if "linkedin_id" not in session:
+        return redirect("/auth/linkedin")
 
     try:
         # is it json?
@@ -249,8 +249,8 @@ def submissions():
 
         user_response = (
             supabase.table("users")
-            .select("email, linkedin_id, full_name")
-            .eq("email", session["user_email"])
+            .select("*")
+            .eq("linkedin_id", session["linkedin_id"])
             .execute()
         )
 
