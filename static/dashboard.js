@@ -22,10 +22,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     credentials: "include"
                 });
 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (e) {
+                    throw new Error(await response.text() || "Invalid server response");
+                }
 
                 if (!response.ok) {
-                    throw new Error(data.error || "Submission failed");
+                    throw new Error(data.error || data.message || "Submission failed");
                 }
 
                 alert("Thanks, reviewing your submission!");
