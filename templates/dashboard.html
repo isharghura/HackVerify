@@ -2,13 +2,30 @@
 <html>
 
 <head>
-    <title>Dashboard</title>
+    <title>HackVerify</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
-    <h1>Welcome, {{ user.full_name or user.email }}!</h1>
-
-    <p>Email: {{ user.email }}</p>
+    <div class="container">
+        <header>
+            <h1>Welcome, {{ user.full_name or user.email }}!</h1>
+        </header>
+        
+        <div class="dashboard-content">
+            <h2>Submit Your Hackathon</h2>
+            <form id="devpostForm">
+                <div class="form-group">
+                    <label for="devpost">Devpost Link</label>
+                    <input type="url" id="devpost" placeholder="https://devpost.com/your-hackathon" required>
+                    <small>Please provide the URL to your hackathon's Devpost page</small>
+                </div>
+                <button type="submit" class="submit-btn">Submit for Verification</button>
+            </form>
+        </div>
+        </div>
+        <script src="/static/script.js"></script>
 </body>
 
 </html>

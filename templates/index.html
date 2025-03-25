@@ -1,36 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HackVerify</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="icon" type="image/x-icon" href="../images/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-
 <body>
     <div class="container">
         <header>
             <h1>HackVerify</h1>
-            <p>Hack smarter, hack fairer</p>
+            <p>Automating cheat checks for hackathon project submissions</p>
         </header>
         <main>
-            <form id="organizerForm">
-                <div class="form-group">
-                    <label for="linkedin">LinkedIn Profile</label>
-                    <input type="text" id="linkedin" placeholder="Enter your LinkedIn" required>
+            <div class="login-container">
+                <p>Please sign in with LinkedIn to access the organizer dashboard</p>
+                <a href="/auth/linkedin" class="linkedin-login-btn">
+                    <i class="fab fa-linkedin"></i>
+                    Continue with LinkedIn
+                </a>
+                <div class="explanation">
+                    <p>After signing in, you'll be able to submit your hackathon details for verification.</p>
                 </div>
-                <div class="form-group">
-                    <label for="devpost">Devpost Link</label>
-                    <input type="text" id="devpost" placeholder="Enter your hackathon's Devpost" required>
-                </div>
-                <button type="submit">Submit</button>
-            </form>
+            </div>
         </main>
     </div>
-    <a href="/auth/linkedin" id="loginButton">Login with LinkedIn</a>
     <script src="/static/script.js"></script>
 </body>
-
 </html>
