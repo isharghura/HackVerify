@@ -266,6 +266,7 @@ def submissions():
 
         # was insertion successful?
         if hasattr(response, "error") and response.error:
+            app.logger.error(f"Supabase error: {response.error}")
             return (
                 jsonify({"error": "Database error", "details": str(response.error)}),
                 500,
