@@ -4,6 +4,7 @@
 <head>
     <title>HackVerify</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="icon" type="image/x-icon" href="../images/favicon.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
@@ -12,20 +13,27 @@
         <header>
             <h1>Welcome, {{ user.full_name or user.email }}!</h1>
         </header>
-        
+
         <div class="dashboard-content">
-            <h2>Submit Your Hackathon</h2>
-            <form id="devpostForm">
-                <div class="form-group">
-                    <label for="devpost">Devpost Link</label>
-                    <input type="url" id="devpost" placeholder="https://devpost.com/your-hackathon" required>
-                    <small>Please provide the URL to your hackathon's Devpost page</small>
-                </div>
-                <button type="submit" class="submit-btn">Submit for Verification</button>
-            </form>
+            <h2>Cheat check your hackathon!</h2>
+            <div class="form-container">
+                <form id="devpostForm" class="main-form">
+                    <div class="form-group">
+                        <label for="devpost">Devpost Link</label>
+                        <input type="url" id="devpost" placeholder="https://devpost.com/your-hackathon" required>
+                    </div>
+                    <button type="submit" class="submit-btn">Submit for Verification</button>
+                    </form>
+<div class="reminder-box">
+    <h3>Verification Process</h3>
+    <p><i class="fas fa-info-circle"></i> We need to verify you're a hackathon organizer</p>
+    <p><i class="fas fa-envelope"></i> You'll receive an email with verification results</p>
+    <p><i class="fas fa-check-circle"></i> Once verified, you can cheat check your hackathon!</p>
+</div>
+</div>
         </div>
-        </div>
-        <script src="/static/dashboard.js"></script>
+    </div>
+    <script src="/static/dashboard.js"></script>
 </body>
 
 </html>

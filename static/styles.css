@@ -15,13 +15,13 @@ body {
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
+    max-width: 800px;
     width: 100%;
 }
 
 header {
     text-align: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
 }
 
 header h1 {
@@ -33,7 +33,7 @@ header h1 {
 header p {
     font-size: 1rem;
     color: #b0b0b0;
-    margin: 0.5rem 0 0;
+    margin: 0.5rem 0 0.5rem;
 }
 
 form {
@@ -106,7 +106,6 @@ button:hover {
     font-size: 1.2rem;
 }
 
-/* Divider Styles */
 .divider {
     display: flex;
     align-items: center;
@@ -125,10 +124,15 @@ button:hover {
     font-size: 0.8rem;
 }
 
-/* Add these new styles */
+.logo {
+    display: block;
+    max-width: 200px;
+    height: auto;
+    margin: 10px auto;
+}
 .login-container {
     text-align: center;
-    padding: 2rem;
+    padding: 0rem;
 }
 
 .linkedin-login-btn {
@@ -181,4 +185,63 @@ button:hover {
     color: #e74c3c;
     border-left: 4px solid #e74c3c;
     display: block;
+}
+.form-container {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+form {
+    flex: 1;
+    max-width: 500px;
+}
+
+.reminder-box {
+    flex: 1;
+    background-color: #2d2d2d;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    max-width: 400px;
+}
+
+.reminder-box h3 {
+    margin-top: 0;
+    color: #3498db;
+    font-size: 1.2rem;
+}
+
+.reminder-box p {
+    margin: 1rem 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: #b0b0b0;
+}
+
+.reminder-box i {
+    color: #3498db;
+    margin-top: 0.2rem;
+}
+
+/* For mobile responsiveness */
+@media (max-width: 768px) {
+    .container {
+        padding: 1.5rem;
+    }
+
+    .form-container {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .main-form,
+    .reminder-box {
+        width: 100%;
+    }
+
+    .reminder-box {
+        margin-top: 1rem;
+    }
 }
