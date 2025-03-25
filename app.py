@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 load_dotenv(".env.local")
 
 app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY") or os.urandom(24)
+
 
 # supabase client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -25,9 +27,6 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
 LINKEDIN_REDIRECT_URI = os.getenv("LINKEDIN_REDIRECT_URI")
-
-# secret key for flask app
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 # server static files
 @app.route("/static/<path:filename>")
@@ -59,6 +58,9 @@ def linkedin_auth():
 def linkedin_callback():
     try:
         code = request.args.get("code")
+        if not code:
+            return "Missing authorization code", 400
+
         token_response = requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
             data={
@@ -72,15 +74,17 @@ def linkedin_callback():
         )
 
         token_data = token_response.json()
+        if "error" in token_data:
+            app.logger.error(f"Token error: {token_data}")
+            return f"LinkedIn token error: {token_data.get('error_description')}", 400
+
+        access_token = token_data["access_token"]
         refresh_token = token_data.get("refresh_token")
         expires_in = token_data.get("expires_in", 3600)
-
         expires_at = datetime.now() + timedelta(seconds=expires_in)
 
         if "error" in token_data:
             return f"LinkedIn token error: {token_data['error_description']}", 400
-
-        access_token = token_data["access_token"]
 
         profile_response = requests.get(
             "https://api.linkedin.com/v2/userinfo",
@@ -92,6 +96,7 @@ def linkedin_callback():
         profile_data = profile_response.json()
 
         if "error" in profile_data:
+            app.logger.error(f"Profile error: {profile_data}")
             return f"LinkedIn API error: {profile_data['message']}", 400
 
         user_data = {
@@ -103,12 +108,17 @@ def linkedin_callback():
             "expires_at": expires_at.isoformat(),
         }
 
-        supabase.table("users").upsert(
-            user_data,
-            on_conflict="linkedin_id",  # update if linkedin_id exists
-        ).execute()
+        response = (
+            supabase.table("users")
+            .upsert(
+                user_data,
+                on_conflict="linkedin_id",  # update if linkedin_id exists
+            )
+            .execute()
+        )
 
         # set up a session
+        session.clear()
         session["user_email"] = profile_data.get("email")
         session["access_token"] = access_token
         session.permanent = True
@@ -116,7 +126,7 @@ def linkedin_callback():
         return redirect("/dashboard")
 
     except Exception as e:
-        print("Error:", str(e))
+        print("Callback error:", str(e))
         return "Authentication failed", 500
 
 
