@@ -1,10 +1,6 @@
 {
     "builds": [
         {
-            "src": "api/submissions.py",
-            "use": "@vercel/python"
-        },
-        {
             "src": "templates/index.html",
             "use": "@vercel/static"
         },
@@ -14,7 +10,11 @@
         },
         {
             "src": "app.py",
-            "use": "@vercel/python"
+            "use": "@vercel/python",
+            "config": {
+                "maxLambdaSize": "15mb",
+                "runtime": "python3.9"
+            }
         },
         {
             "src": "api/scrape.py",
@@ -40,7 +40,7 @@
     "routes": [
         {
             "src": "/api/submissions",
-            "dest": "/api/submissions.py"
+            "dest": "app.py"
         },
         {
             "src": "/api/test",

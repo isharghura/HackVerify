@@ -22,7 +22,13 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY") or os.urandom(24)
 # supabase client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+try:
+    test = supabase.table("users").select("*").limit(1).execute()
+    print("Supabase connection test:", bool(test.data))
+except Exception as e:
+    print("Supabase connection error:", str(e))
 
 # linkedin oauth
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
@@ -279,6 +285,29 @@ def submissions():
         return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
 
+def lambda_handler(event, context):
+    from werkzeug.wrappers import Request, Response
+    from werkzeug.wsgi import responder
+    from werkzeug.exceptions import HTTPException
+
+    @responder
+    def application(environ, start_response):
+        try:
+            return app(environ, start_response)
+        except HTTPException as e:
+            return e
+
+    return Request(event).get_response(application)
+
+
 # run flask app
 if __name__ == "__main__":
-    app.run(port=8000)
+    # app.run(port=8000)
+    app.run()
+
+else:
+
+    def create_app():
+        return app
+
+    api = create_app()
