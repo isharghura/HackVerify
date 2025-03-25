@@ -1,10 +1,9 @@
-document.getElementById("organizerForm").addEventListener("submit", async (event) => {
+document.getElementById("devpostForm").addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const linkedin = document.getElementById("linkedin").value;
     const devpost = document.getElementById("devpost").value;
 
-    if (!linkedin || !devpost) {
+    if (!devpost) {
         alert("Please fill in all fields!");
         return;
     }
@@ -15,7 +14,7 @@ document.getElementById("organizerForm").addEventListener("submit", async (event
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ linkedin, devpost }),
+            body: JSON.stringify({ devpost }),
         });
 
         const data = await response.json();
