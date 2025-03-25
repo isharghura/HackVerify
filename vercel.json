@@ -5,15 +5,19 @@
             "use": "@vercel/static"
         },
         {
+            "src": "templates/dashboard.html",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "app.py",
+            "use": "@vercel/python"
+        },
+        {
             "src": "api/scrape.py",
             "use": "@vercel/python"
         },
         {
             "src": "api/test.py",
-            "use": "@vercel/python"
-        },
-        {
-            "src": "api/submissions.py",
             "use": "@vercel/python"
         },
         {
@@ -35,10 +39,6 @@
             "dest": "/api/scrape.py"
         },
         {
-            "src": "/api/submissions",
-            "dest": "/api/submissions.py"
-        },
-        {
             "src": "/templates/(.*)",
             "dest": "/templates/$1"
         },
@@ -51,8 +51,16 @@
             "dest": "/templates/index.html"
         },
         {
+            "src": "/",
+            "dest": "/templates/dashboard.html"
+        },
+        {
             "src": "/static/(.*)",
             "dest": "/static/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "app.py"
         }
     ]
 }
