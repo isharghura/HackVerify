@@ -35,9 +35,17 @@
         {
             "src": "static/login.js",
             "use": "@vercel/static"
+        },
+        {
+            "src": "images/*",
+            "use": "@vercel/static"
         }
     ],
     "routes": [
+        {
+            "src": "/images/(.*)",
+            "dest": "/images/$1"
+        },
         {
             "src": "/api/submissions",
             "dest": "app.py"
