@@ -229,10 +229,8 @@ form {
 
 .spacer {
     height: 2rem;
-    /* Adjust this value to control the space */
 }
-/* For mobile responsiveness */
-@media (max-width: 860px) {
+@media only screen and (max-width: 763px) {
     .container {
         padding: 1.5rem;
     }
