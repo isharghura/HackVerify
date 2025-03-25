@@ -233,6 +233,10 @@ def submissions():
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
+        # is it json?
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+
         data = request.get_json()
         if not data or "devpost" not in data:
             return jsonify({"error": "Devpost link is required"}), 400
@@ -260,11 +264,18 @@ def submissions():
             supabase.table("interested_organizers").insert(submission_data).execute()
         )
 
+        # was insertion successful?
+        if hasattr(response, "error") and response.error:
+            return (
+                jsonify({"error": "Database error", "details": str(response.error)}),
+                500,
+            )
+
         return jsonify({"message": "Submission successful!"}), 200
 
     except Exception as e:
-        app.logger.error(f"Submission error: {str(e)}")
-        return jsonify({"error": "Internal server error"}), 500
+        app.logger.error(f"Submission error: {str(e)}", exc_info=True)
+        return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
 
 # run flask app
