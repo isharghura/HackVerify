@@ -4,7 +4,7 @@ document.getElementById("devpostForm").addEventListener("submit", async (event) 
     const devpost = document.getElementById("devpost").value;
 
     if (!devpost) {
-        alert("Please fill in all fields!");
+        alert("Please enter a Devpost link!");
         return;
     }
 
@@ -15,7 +15,12 @@ document.getElementById("devpostForm").addEventListener("submit", async (event) 
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({ devpost }),
+            credentials: "include"
         });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
 
         const data = await response.json();
         alert("Thanks, reviewing your submission!");
@@ -26,11 +31,13 @@ document.getElementById("devpostForm").addEventListener("submit", async (event) 
 });
 
 function checkDashboardAccess() {
-    fetch("/dashboard")
+    fetch("/dashboard", {
+        credentials: "include"
+    })
         .then(response => {
-            if (response.status === 403) {
+            if (response.status === 403 || response.status === 401) {
                 alert("You don't have an account yet, we need to verify that you are a hackathon organizer first! Submit your info at https://www.hackverify.com");
-            } else {
+            } else if (response.ok) {
                 console.log("Welcome to the dashboard!");
             }
         })
@@ -39,17 +46,20 @@ function checkDashboardAccess() {
         });
 }
 
-document.getElementById("loginButton").addEventListener("click", async (event) => {
+document.getElementById("linkedin-login-btn").addEventListener("click", async (event) => {
     event.preventDefault();
+    try {
+        const response = await fetch("/check-auth", {
+            credentials: "include"
+        });
 
-    const email = localStorage.getItem("user_email");
-    if (email) {
-        const response = await fetch(`/check-auth?email=${encodeURIComponent(email)}`);
         if (response.ok) {
             window.location.href = "/dashboard";
-            return;
+        } else {
+            window.location.href = "/auth/linkedin";
         }
+    } catch (error) {
+        console.error("Error:", error);
+        window.location.href = "/auth/linkedin";
     }
-
-    window.location.href = "/auth/linkedin";
 });
