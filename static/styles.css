@@ -36,9 +36,11 @@ header p {
     margin: 0.5rem 0 0.5rem;
 }
 
+
 form {
     display: flex;
     flex-direction: column;
+    margin-top: 2rem;
 }
 
 .form-group {
@@ -225,6 +227,10 @@ form {
     margin-top: 0.2rem;
 }
 
+.spacer {
+    height: 2rem;
+    /* Adjust this value to control the space */
+}
 /* For mobile responsiveness */
 @media (max-width: 768px) {
     .container {
