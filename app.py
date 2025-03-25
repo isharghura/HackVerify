@@ -262,7 +262,7 @@ def submissions():
         submission_data = {
             "devpost": data["devpost"],
             "email": user["email"],
-            "linkedin": f"https://linkedin.com/in/{user['linkedin_id']}",
+            "linkedin_id": user["linkedin_id"],
             "name": user.get("full_name", ""),
         }
 

@@ -232,7 +232,7 @@ form {
     /* Adjust this value to control the space */
 }
 /* For mobile responsiveness */
-@media (max-width: 768px) {
+@media (max-width: 760px) {
     .container {
         padding: 1.5rem;
     }
