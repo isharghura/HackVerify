@@ -22,17 +22,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     credentials: "include"
                 });
 
-                let data;
-                try {
-                    data = await response.json();
-                } catch (e) {
-                    throw new Error(await response.text() || "Invalid server response");
-                }
-
                 if (!response.ok) {
-                    throw new Error(data.error || data.message || "Submission failed");
+                    const errorResponse = response.clone();
+                    let errorData;
+                    try {
+                        errorData = await errorResponse.json();
+                    } catch {
+                        errorData = { error: await errorResponse.text() };
+                    }
+                    throw new Error(errorData.error || errorData.message || "Submission failed");
                 }
 
+                const data = await response.json();
                 alert("Thanks, reviewing your submission!");
                 form.reset();
             } catch (error) {
