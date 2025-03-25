@@ -1,42 +1,53 @@
-document.getElementById("devpostForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById("devpostForm");
+    if (form) {
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            const devpostInput = document.getElementById("devpost");
 
-    const devpost = document.getElementById("devpost").value;
+            if (!devpostInput || !devpostInput.value) {
+                alert("Please enter your hackathon's Devpost link!");
+                return;
+            }
 
-    if (!devpost) {
-        alert("Please enter a Devpost link!");
-        return;
-    }
+            try {
+                const response = await fetch("/api/submissions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        devpost: devpostInput.value
+                    }),
+                    credentials: "include"
+                });
 
-    try {
-        const response = await fetch("/api/submissions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ devpost }),
-            credentials: "include"
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Submission failed");
+                }
+
+                alert("Thanks, reviewing your submission!");
+                form.reset();
+            } catch (error) {
+                console.error("Submission error:", error);
+                alert(error.message || "Submission failed. Please try again.");
+            }
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || "Submission failed");
-        }
-
-        alert("Thanks, reviewing your submission!");
-    } catch (error) {
-        console.error("Error:", error);
-        alert(error.message || "Something happened, please try again!");
+    } else {
+        console.warn("Devpost form not found");
     }
-});
 
+    checkDashboardAccess();
+});
 function checkDashboardAccess() {
     fetch("/dashboard", {
         credentials: "include"
     })
         .then(response => {
             if (response.status === 403 || response.status === 401) {
-                alert("You don't have an account yet, we need to verify that you are a hackathon organizer first! Submit your info at https://www.hackverify.com");
+                alert("Please login first!");
             } else if (response.ok) {
                 console.log("Welcome to the dashboard!");
             }
