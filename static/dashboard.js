@@ -19,14 +19,14 @@ document.getElementById("devpostForm").addEventListener("submit", async (event) 
         });
 
         if (!response.ok) {
-            throw new Error(await response.text());
+            const error = await response.json();
+            throw new Error(error.message || "Submission failed");
         }
 
-        const data = await response.json();
         alert("Thanks, reviewing your submission!");
     } catch (error) {
         console.error("Error:", error);
-        alert("Something happened, please try again!");
+        alert(error.message || "Something happened, please try again!");
     }
 });
 
@@ -45,21 +45,3 @@ function checkDashboardAccess() {
             console.error("Error:", error);
         });
 }
-
-document.getElementById("linkedin-login-btn").addEventListener("click", async (event) => {
-    event.preventDefault();
-    try {
-        const response = await fetch("/check-auth", {
-            credentials: "include"
-        });
-
-        if (response.ok) {
-            window.location.href = "/dashboard";
-        } else {
-            window.location.href = "/auth/linkedin";
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        window.location.href = "/auth/linkedin";
-    }
-});
