@@ -135,16 +135,22 @@ def linkedin_callback():
 def dashboard():
     if "user_email" not in session:
         return redirect("/auth/linkedin")
+    try:
+        response = (
+            supabase.table("users")
+            .select("*")
+            .eq("email", session["user_email"])
+            .execute()
+        )
 
-    response = (
-        supabase.table("users").select("*").eq("email", session["user_email"]).execute()
-    )
+        if not response.data:
+            return redirect("/auth/linkedin")
 
-    if not response.data:
-        return "User not found", 404
+        return render_template("dashboard.html", user=response.data[0])
 
-    user_data = response.data[0]
-    return render_template("dashboard.html", user=user_data)
+    except Exception as e:
+        app.logger.error(f"Dashboard error: {str(e)}")
+        return redirect("/")
 
 
 @app.route("/check-auth")
