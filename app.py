@@ -35,6 +35,7 @@ LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
 LINKEDIN_REDIRECT_URI = os.getenv("LINKEDIN_REDIRECT_URI")
 
+
 # server static files
 @app.route("/static/<path:filename>")
 def static_files(filename):
@@ -244,8 +245,12 @@ def submissions():
             return jsonify({"error": "Request must be JSON"}), 400
 
         data = request.get_json()
-        if not data or "devpost" not in data:
+        if "hName" not in data:
+            return jsonify({"error": "Hackathon name is required"}), 400
+        if "devpost" not in data:
             return jsonify({"error": "Devpost link is required"}), 400
+        if "hlipage" not in data:
+            return jsonify({"error": "Hackathon LinkedIn page link is required"}), 400
 
         user_response = (
             supabase.table("users")
@@ -260,7 +265,9 @@ def submissions():
         user = user_response.data[0]
 
         submission_data = {
+            "hackathon_name": data["hName"],
             "devpost": data["devpost"],
+            "hackathon_linkedin": data["hlipage"],
             "email": user["email"],
             "linkedin_id": user["linkedin_id"],
             "name": user.get("full_name", ""),
