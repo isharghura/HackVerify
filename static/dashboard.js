@@ -1,12 +1,22 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById("devpostForm");
+    const form = document.getElementById("verificationForm");
     if (form) {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
+            const nameInput = document.getElementById("hName");
             const devpostInput = document.getElementById("devpost");
+            const linkedinInput = document.getElementById("hlipage");
 
+            if (!nameInput || !nameInput.value) {
+                alert("Please enter your hackathon's name!");
+                return;
+            }
             if (!devpostInput || !devpostInput.value) {
                 alert("Please enter your hackathon's Devpost link!");
+                return;
+            }
+            if (!linkedinInput || !linkedinInput.value) {
+                alert("Please enter your hackathon's LinkedIn page!");
                 return;
             }
 
@@ -17,7 +27,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        devpost: devpostInput.value
+                        hName: document.getElementById("hName").value,
+                        devpost: document.getElementById("devpost").value,
+                        hlipage: document.getElementById("hlipage").value
                     }),
                     credentials: "include"
                 });
@@ -42,11 +54,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     } else {
-        console.warn("Devpost form not found");
+        console.warn("Verfication form not found");
     }
 
     checkDashboardAccess();
 });
+
 function checkDashboardAccess() {
     fetch("/dashboard", {
         credentials: "include"
