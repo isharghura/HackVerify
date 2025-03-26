@@ -40,7 +40,7 @@ header p {
 form {
     display: flex;
     flex-direction: column;
-    margin-top: 2rem;
+    margin-top: -1rem;
 }
 
 .form-group {
@@ -48,9 +48,9 @@ form {
 }
 
 label {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     color: #e0e0e0;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.2rem;
     display: block;
 }
 
@@ -63,6 +63,7 @@ input {
     box-sizing: border-box;
     background-color: #2d2d2d;
     color: #e0e0e0;
+    margin-bottom: 1rem;
 }
 
 input:focus {
@@ -206,6 +207,7 @@ form {
     border-radius: 8px;
     border-left: 4px solid #3498db;
     max-width: 400px;
+    margin-top: 2rem;
 }
 
 .reminder-box h3 {
