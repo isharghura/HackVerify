@@ -253,15 +253,11 @@ def submissions():
             rate_check.data[0]["created_at"]
         ).replace(tzinfo=timezone.utc)
         if current_time - last_request_time < timedelta(minutes=5):
-            retry_seconds = int(
-                timedelta(minutes=5) - (current_time - last_request_time)
-            ).total_seconds()
             return (
                 jsonify(
                     {
                         "error": "Rate limit exceeded",
                         "message": "Only 1 submission allowed every 5 minutes",
-                        "retry_after": retry_seconds,
                     }
                 ),
                 429,
@@ -306,6 +302,15 @@ def submissions():
 
         user = user_response.data[0]
 
+        existing_submission = (
+            supabase.table("interested_organizers")
+            .select("*")
+            .eq("linkedin_id", user["linkedin_id"])
+            .eq("devpost", data["devpost"])
+            .maybe_single()
+            .execute()
+        )
+
         submission_data = {
             "devpost": data["devpost"],
             "website": data["website"],
@@ -313,11 +318,23 @@ def submissions():
             "email": user["email"],
             "linkedin_id": user["linkedin_id"],
             "name": user.get("full_name", ""),
+            "updated_at": current_time.isoformat(),
         }
 
-        response = (
-            supabase.table("interested_organizers").insert(submission_data).execute()
-        )
+        if existing_submission.data:
+            response = (
+                supabase.table("interested_organizers")
+                .update(submission_data)
+                .eq("id", existing_submission.data["id"])
+                .execute()
+            )
+        else:
+            submission_data["created_at"] = current_time.isoformat()
+            response = (
+                supabase.table("interested_organizers")
+                .insert(submission_data)
+                .execute()
+            )
 
         # was insertion successful?
         if hasattr(response, "error") and response.error:
