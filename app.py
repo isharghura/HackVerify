@@ -236,7 +236,7 @@ def submissions():
     # is user logged in?
     if "linkedin_id" not in session:
         refresh_response = check_auth()
-        if refresh_response[1] != 200:
+        if refresh_response.status_code != 200:
             return redirect("/auth/linkedin")
 
     client_id = session.get("linkedin_id")
