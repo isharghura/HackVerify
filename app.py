@@ -287,8 +287,6 @@ def submissions():
             return jsonify({"error": "Devpost link is required"}), 400
         if "website" not in data:
             return jsonify({"error": "Hackathon website link is required"}), 400
-        if "hlipage" not in data:
-            return jsonify({"error": "Hackathon LinkedIn page link is required"}), 400
 
         user_response = (
             supabase.table("users")
@@ -314,7 +312,6 @@ def submissions():
         submission_data = {
             "devpost": data["devpost"],
             "website": data["website"],
-            "hackathon_linkedin": data["hlipage"],
             "email": user["email"],
             "linkedin_id": user["linkedin_id"],
             "name": user.get("full_name", ""),
