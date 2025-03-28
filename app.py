@@ -181,7 +181,9 @@ def check_auth():
         user = user_data[0]
 
         # does token need refreshing?
-        if datetime.now() > datetime.fromisoformat(user["expires_at"]):
+        if datetime.now() > datetime.fromisoformat(user["expires_at"]) - timedelta(
+            minutes=5
+        ):
             try:
                 token_response = requests.post(
                     "https://www.linkedin.com/oauth/v2/accessToken",
@@ -213,8 +215,7 @@ def check_auth():
                 session["access_token"] = token_data["access_token"]
 
             except Exception as e:
-                app.logger.error(f"Token refresh failed: {str(e)}")
-                return {"status": "token_refresh_failed"}, 401
+                pass
 
         return {
             "status": "authenticated",
