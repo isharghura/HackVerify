@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function () {
             event.preventDefault();
             const devpostInput = document.getElementById("devpost");
             const websiteInput = document.getElementById("website");
-            const linkedinInput = document.getElementById("hlipage");
 
             if (!devpostInput || !devpostInput.value) {
                 alert("Please enter your hackathon's Devpost link!");
@@ -13,10 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (!websiteInput || !websiteInput.value) {
                 alert("Please enter your hackathon's website link!");
-                return;
-            }
-            if (!linkedinInput || !linkedinInput.value) {
-                alert("Please enter your hackathon's LinkedIn page!");
                 return;
             }
 
@@ -28,8 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     body: JSON.stringify({
                         devpost: document.getElementById("devpost").value,
-                        website: document.getElementById("website").value,
-                        hlipage: document.getElementById("hlipage").value
+                        website: document.getElementById("website").value
                     }),
                     credentials: "include"
                 });
