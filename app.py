@@ -317,11 +317,12 @@ def submissions():
             "updated_at": current_time.isoformat(),
         }
 
-        if existing_submission.data:
+        if existing_submission.data and len(existing_submission.data) > 0:
+            existing_id = existing_submission.data[0]["id"]
             response = (
                 supabase.table("interested_organizers")
                 .update(submission_data)
-                .eq("id", existing_submission.data["id"])
+                .eq("id", existing_id)
                 .execute()
             )
         else:
