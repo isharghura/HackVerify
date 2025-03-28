@@ -208,7 +208,7 @@ form {
     border-radius: 8px;
     border-left: 4px solid #3498db;
     max-width: 400px;
-    margin-top: 2rem;
+    margin-top: -2rem
 }
 
 .reminder-box h3 {
