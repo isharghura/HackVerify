@@ -3,16 +3,16 @@ document.addEventListener('DOMContentLoaded', function () {
     if (form) {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
-            const nameInput = document.getElementById("hName");
             const devpostInput = document.getElementById("devpost");
+            const websiteInput = document.getElementById("website");
             const linkedinInput = document.getElementById("hlipage");
 
-            if (!nameInput || !nameInput.value) {
-                alert("Please enter your hackathon's name!");
-                return;
-            }
             if (!devpostInput || !devpostInput.value) {
                 alert("Please enter your hackathon's Devpost link!");
+                return;
+            }
+            if (!websiteInput || !websiteInput.value) {
+                alert("Please enter your hackathon's website link!");
                 return;
             }
             if (!linkedinInput || !linkedinInput.value) {
@@ -27,8 +27,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        hName: document.getElementById("hName").value,
                         devpost: document.getElementById("devpost").value,
+                        website: document.getElementById("website").value,
                         hlipage: document.getElementById("hlipage").value
                     }),
                     credentials: "include"

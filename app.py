@@ -283,10 +283,10 @@ def submissions():
             return jsonify({"error": "Request must be JSON"}), 400
 
         data = request.get_json()
-        if "hName" not in data:
-            return jsonify({"error": "Hackathon name is required"}), 400
         if "devpost" not in data:
             return jsonify({"error": "Devpost link is required"}), 400
+        if "website" not in data:
+            return jsonify({"error": "Hackathon website link is required"}), 400
         if "hlipage" not in data:
             return jsonify({"error": "Hackathon LinkedIn page link is required"}), 400
 
@@ -303,8 +303,8 @@ def submissions():
         user = user_response.data[0]
 
         submission_data = {
-            "hackathon_name": data["hName"],
             "devpost": data["devpost"],
+            "website": data["website"],
             "hackathon_linkedin": data["hlipage"],
             "email": user["email"],
             "linkedin_id": user["linkedin_id"],
