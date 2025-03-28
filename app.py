@@ -233,11 +233,10 @@ def check_auth():
 # handle form submissions
 @app.route("/api/submissions", methods=["POST"])
 def submissions():
-    # check rate limit
     client_id = session.get("linkedin_id") or request.remote_addr
-    time_limit = datetime.now(timezone.utc) - timedelta(minutes=5)
+    current_time = datetime.now(timezone.utc)
 
-    # get exists requests
+    # get last request
     rate_check = (
         supabase.table("rate_limits")
         .select("created_at")
@@ -248,29 +247,34 @@ def submissions():
         .execute()
     )
 
-    # was there a recent request?
+    # was there actually a request made before?
     if rate_check.data and len(rate_check.data) > 0:
         last_request_time = datetime.fromisoformat(
             rate_check.data[0]["created_at"]
         ).replace(tzinfo=timezone.utc)
-        if datetime.now(timezone.utc) - last_request_time < timedelta(minutes=5):
+        if current_time - last_request_time < timedelta(minutes=5):
+            retry_seconds = int(
+                timedelta(minutes=5) - (current_time - last_request_time)
+            ).total_seconds()
             return (
                 jsonify(
                     {
                         "error": "Rate limit exceeded",
                         "message": "Only 1 submission allowed every 5 minutes",
+                        "retry_after": retry_seconds,
                     }
                 ),
                 429,
             )
 
-    # log request
-    supabase.table("rate_limits").insert(
+    # update submission time
+    supabase.table("rate_limits").upsert(
         {
             "client_id": client_id,
             "endpoint": "submissions",
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
+            "created_at": current_time.isoformat(),
+        },
+        on_conflict="client_id,endpoint",
     ).execute()
 
     # is user logged in?
