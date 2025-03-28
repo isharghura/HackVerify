@@ -305,7 +305,6 @@ def submissions():
             .select("*")
             .eq("linkedin_id", user["linkedin_id"])
             .eq("devpost", data["devpost"])
-            .maybe_single()
             .execute()
         )
 
