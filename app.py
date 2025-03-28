@@ -235,7 +235,9 @@ def check_auth():
 def submissions():
     # is user logged in?
     if "linkedin_id" not in session:
-        return redirect("/auth/linkedin")
+        refresh_response = check_auth()
+        if refresh_response[1] != 200:
+            return redirect("/auth/linkedin")
 
     client_id = session.get("linkedin_id")
     current_time = datetime.now(timezone.utc)
