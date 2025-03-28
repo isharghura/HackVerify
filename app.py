@@ -11,24 +11,17 @@ import os
 import requests
 from supabase import create_client, Client
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 load_dotenv(".env.local")
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY") or os.urandom(24)
 
-
 # supabase client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-try:
-    test = supabase.table("users").select("*").limit(1).execute()
-    print("Supabase connection test:", bool(test.data))
-except Exception as e:
-    print("Supabase connection error:", str(e))
 
 # linkedin oauth
 LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
@@ -240,6 +233,46 @@ def check_auth():
 # handle form submissions
 @app.route("/api/submissions", methods=["POST"])
 def submissions():
+    # check rate limit
+    client_id = session.get("linkedin_id") or request.remote_addr
+    time_limit = datetime.now(timezone.utc) - timedelta(minutes=5)
+
+    # get exists requests
+    rate_check = (
+        supabase.table("rate_limits")
+        .select("created_at")
+        .eq("client_id", client_id)
+        .eq("endpoint", "submissions")
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    # was there a recent request?
+    if rate_check.data and len(rate_check.data) > 0:
+        last_request_time = datetime.fromisoformat(
+            rate_check.data[0]["created_at"]
+        ).replace(tzinfo=timezone.utc)
+        if datetime.now(timezone.utc) - last_request_time < timedelta(minutes=5):
+            return (
+                jsonify(
+                    {
+                        "error": "Rate limit exceeded",
+                        "message": "Only 1 submission allowed every 5 minutes",
+                    }
+                ),
+                429,
+            )
+
+    # log request
+    supabase.table("rate_limits").insert(
+        {
+            "client_id": client_id,
+            "endpoint": "submissions",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+    ).execute()
+
     # is user logged in?
     if "linkedin_id" not in session:
         return redirect("/auth/linkedin")
