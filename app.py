@@ -114,6 +114,11 @@ def linkedin_callback():
             "access_token": access_token,
             "refresh_token": refresh_token,
             "expires_at": expires_at.isoformat(),
+            "email_verified": profile_data.get("email_verified"),
+            "locale": profile_data.get("locale"),
+            "given_name": profile_data.get("given_name"),
+            "family_name": profile_data.get("family_name"),
+            "picture": profile_data.get("picture"),
         }
 
         response = (
