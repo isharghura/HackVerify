@@ -233,7 +233,11 @@ def check_auth():
 # handle form submissions
 @app.route("/api/submissions", methods=["POST"])
 def submissions():
-    client_id = session.get("linkedin_id") or request.remote_addr
+    # is user logged in?
+    if "linkedin_id" not in session:
+        return redirect("/auth/linkedin")
+
+    client_id = session.get("linkedin_id")
     current_time = datetime.now(timezone.utc)
 
     # get last request
@@ -272,10 +276,6 @@ def submissions():
         },
         on_conflict="client_id,endpoint",
     ).execute()
-
-    # is user logged in?
-    if "linkedin_id" not in session:
-        return redirect("/auth/linkedin")
 
     try:
         # is it json?
