@@ -52,6 +52,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     checkDashboardAccess();
+
+    const logoutButton = document.querySelector('.logout-button');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', handleLogout);
+    } else {
+        console.warn("Logout button not found");
+    }
 });
 
 function checkDashboardAccess() {
@@ -68,4 +75,35 @@ function checkDashboardAccess() {
         .catch(error => {
             console.error("Error:", error);
         });
+}
+
+async function handleLogout() {
+    try {
+        const response = await fetch("/logout", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            const errorResponse = response.clone();
+            let errorData;
+            try {
+                errorData = await errorResponse.json();
+            } catch {
+                errorData = { error: await errorResponse.text() };
+            }
+            throw new Error(errorData.error || "Logout failed");
+        }
+
+        const data = await response.json();
+        console.log("Logout successful", data);
+        alert("Logged out successfully!");
+        window.location.href = "/";
+    } catch (error) {
+        console.error("Logout error:", error);
+        alert("Logout failed. Please try again.");
+    }
 }
