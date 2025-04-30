@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup
 from flask import (
     Flask,
     jsonify,
@@ -355,6 +356,56 @@ def submissions():
 def logout():
     session.clear()
     return jsonify({"message": "Logged out"}), 200
+
+
+# web scraper to find all projects from devpost link
+@app.route("/scrape_devpost_link", methods=["POST"])
+def scrape_devpost_link(devpost_link: str):
+    all_project_links = []
+    page = 1
+
+    print(f"scraping {devpost_link}")
+
+    while True:
+        gallery_url = f"{devpost_link}/project-gallery?page={page}"
+        print(f"scraping page {page}: {gallery_url}")
+
+        try:
+            response = requests.get(gallery_url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # all project link tags in html
+            project_anchors = soup.select('a.block-wrapper-link[href*="/software/"]')
+            page_links = [a["href"] for a in project_anchors]
+
+            if not page_links:
+                print("no more projects found")
+                break
+
+            all_project_links.extend(page_links)
+            page += 1
+
+        except Exception as e:
+            print(f"error scraping page {page}: {str(e)}")
+            break
+
+    print(f"found {len(all_project_links)} total projects")
+
+    # put into supabase
+    try:
+        supabase.table("devpost_hackathons").upsert(
+            {
+                "devpost_link": devpost_link,
+                "project_links": all_project_links,
+                "last_scraped_at": datetime.now(timezone.utc).isoformat(),
+            },
+            on_conflict="devpost_link",
+        ).execute()
+        print("all projects stored successfully")
+
+    except Exception as e:
+        print(f"database error: {str(e)}")
 
 
 def lambda_handler(event, context):
