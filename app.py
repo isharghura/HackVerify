@@ -351,6 +351,12 @@ def submissions():
         return jsonify({"error": "Internal server error", "details": str(e)}), 500
 
 
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out"}), 200
+
+
 def lambda_handler(event, context):
     from werkzeug.wrappers import Request, Response
     from werkzeug.wsgi import responder
