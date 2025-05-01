@@ -3,15 +3,13 @@ import os
 from supabase import create_client
 from datetime import datetime, timezone
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 # function to test
 from app import scrape_devpost_link, SUPABASE_KEY, SUPABASE_URL
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 
-def test_scraper():
+def test_find_projects():
     TEST_URL = "https://cuhacking6.devpost.com"
     print(f"testing with {TEST_URL}")
 
@@ -32,4 +30,4 @@ def test_scraper():
 
 
 if __name__ == "__main__":
-    test_scraper()
+    test_find_projects()

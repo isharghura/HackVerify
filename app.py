@@ -366,6 +366,30 @@ def scrape_devpost_link(devpost_link: str):
 
     print(f"scraping {devpost_link}")
 
+    # look for hackathon period first
+    devpost_dates_url = f"{devpost_link}/details/dates"
+    dates = []
+    print(f"scraping {devpost_dates_url} for when hackathon begins and ends")
+
+    try:
+        response = requests.get(devpost_dates_url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        date_tags = soup.find_all(
+            "td", attrs={"data-iso-date": True}, class_=lambda x: x != "active"
+        )
+
+        for tag in date_tags:
+            iso_date = tag["data-iso-date"]
+            dates.append(iso_date)
+
+        for i in range(len(dates)):
+            print(f"{dates[i]}\n")
+
+    except Exception as e:
+        print(f"error scraping webpage: {str(e)}")
+
     while True:
         gallery_url = f"{devpost_link}/project-gallery?page={page}"
         print(f"scraping page {page}: {gallery_url}")
@@ -399,6 +423,7 @@ def scrape_devpost_link(devpost_link: str):
                 "devpost_link": devpost_link,
                 "project_links": all_project_links,
                 "last_scraped_at": datetime.now(timezone.utc).isoformat(),
+                "datesandtimes": dates,
             },
             on_conflict="devpost_link",
         ).execute()
