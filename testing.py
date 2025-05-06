@@ -23,10 +23,19 @@ def test_find_projects():
         .execute()
     )
 
-    if result.data:
-        print(f"Found {len(result.data[0]['project_links'])} projects")
+    if result.data and len(result.data) > 0:
+        project_links = result.data[0]["project_links"]
+        links_list = [
+            link.strip(' "') for link in project_links.split(",") if link.strip()
+        ]
+
+        if project_links:
+            print(f"test: found {len(links_list)} total projects")
+
+        else:
+            print("test: found record but no projects")
     else:
-        print("No data found")
+        print("test: no data found")
 
 
 if __name__ == "__main__":

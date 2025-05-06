@@ -81,9 +81,6 @@ def linkedin_callback():
             return f"LinkedIn token error: {token_data.get('error_description')}", 400
 
         access_token = token_data["access_token"]
-        refresh_token = token_data.get("refresh_token")
-        expires_in = token_data.get("expires_in", 3600)
-        expires_at = datetime.now() + timedelta(seconds=expires_in)
 
         if "error" in token_data:
             return f"LinkedIn token error: {token_data['error_description']}", 400
@@ -106,12 +103,6 @@ def linkedin_callback():
             "linkedin_id": profile_data["sub"],
             "full_name": profile_data.get("name", ""),
             "access_token": access_token,
-            "refresh_token": refresh_token,
-            "expires_at": expires_at.isoformat(),
-            "email_verified": profile_data.get("email_verified"),
-            "locale": profile_data.get("locale"),
-            "given_name": profile_data.get("given_name"),
-            "family_name": profile_data.get("family_name"),
             "picture": profile_data.get("picture"),
         }
 
@@ -202,13 +193,9 @@ def check_auth():
                     return {"status": "token_refresh_failed"}, 401
 
                 # update user tokens in db
-                expires_at = datetime.now() + timedelta(
-                    seconds=token_data["expires_in"]
-                )
                 supabase.table("users").update(
                     {
                         "access_token": token_data["access_token"],
-                        "expires_at": expires_at.isoformat(),
                     }
                 ).eq("linkedin_id", session["linkedin_id"]).execute()
 
@@ -318,7 +305,6 @@ def submissions():
             "email": user["email"],
             "linkedin_id": user["linkedin_id"],
             "name": user.get("full_name", ""),
-            "updated_at": current_time.isoformat(),
         }
 
         if existing_submission.data and len(existing_submission.data) > 0:
