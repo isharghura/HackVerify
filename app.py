@@ -1,3 +1,4 @@
+import re
 from bs4 import BeautifulSoup
 from flask import (
     Flask,
@@ -417,6 +418,80 @@ def scrape_devpost_link(devpost_link: str):
 
     except Exception as e:
         print(f"database error: {str(e)}")
+
+
+def get_github_link(project_link):
+    try:
+        response = requests.get(project_link)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        print("searching through " + project_link)
+        github_link = soup.find("a", href=re.compile(r"github\.com"))
+        github_value = github_link["href"] if github_link else "no GitHub link found"
+        print(f"found {github_value}")
+        return github_value
+
+    except Exception as e:
+        print(f"error fetching GitHub link: {e}")
+        return None
+
+
+@app.route("/get_all_github_links", methods=["POST"])
+def get_all_github_links(devpost_link):
+    all_github_links = []
+    try:
+        # get projs from supabase
+        response = (
+            supabase.table("devpost_hackathons")
+            .select("*")
+            .eq("devpost_link", devpost_link)
+            .execute()
+        )
+
+        if response.data and len(response.data) > 0:
+            project_links = response.data[0].get("project_links", "")
+
+            # clean and parse the links
+            if isinstance(project_links, str):
+                # remove brackets and quotes
+                project_links = project_links.strip("[]\"'")
+                project_links_list = [
+                    link.strip(" \"'")
+                    for link in project_links.split(",")
+                    if link.strip()
+                ]
+            elif isinstance(project_links, list):
+                project_links_list = project_links
+            else:
+                project_links_list = []
+
+            # now we can get the githubs
+            for project_link in project_links_list:
+                try:
+                    github_link = get_github_link(project_link)
+                    if github_link:
+                        all_github_links.append(github_link)
+                except Exception as e:
+                    print(f"error fetching GitHub link for {project_link}: {e}")
+                    continue
+
+    except Exception as e:
+        print(f"error fetching all GitHub links: {e}")
+        return None
+
+    try:
+        supabase.table("devpost_hackathons").upsert(
+            {"devpost_link": devpost_link, "github_links": all_github_links},
+            on_conflict="devpost_link",
+        ).execute()
+        print("all GitHub links stored successfully")
+        return all_github_links
+
+    except Exception as e:
+        print(f"database error: {str(e)}")
+        return None
 
 
 def lambda_handler(event, context):

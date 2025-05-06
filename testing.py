@@ -4,7 +4,7 @@ from supabase import create_client
 from datetime import datetime, timezone
 
 # function to test
-from app import scrape_devpost_link, SUPABASE_KEY, SUPABASE_URL
+from app import scrape_devpost_link, get_all_github_links, SUPABASE_KEY, SUPABASE_URL
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -37,6 +37,32 @@ def test_find_projects():
     else:
         print("test: no data found")
 
+def test_find_githubs():
+    TEST_URL = "https://cuhacking6.devpost.com"
+    print(f"testing with {TEST_URL}")
+
+    get_all_github_links(TEST_URL)
+
+    # verify
+    result = (
+        supabase.table("devpost_hackathons")
+        .select("*")
+        .eq("devpost_link", TEST_URL)
+        .execute()
+    )
+    if result.data and len(result.data) > 0:
+        github_links = result.data[0]["github_links"]
+        links_list = [
+            link.strip(' "') for link in github_links.split(",") if link.strip()
+        ]
+
+        if github_links:
+            print(f"test: found {len(links_list)} total githubs")
+
+        else:
+            print("test: found record but no githubs")
+    else:
+        print("test: no data found")
 
 if __name__ == "__main__":
-    test_find_projects()
+    test_find_githubs()
