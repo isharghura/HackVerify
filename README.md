@@ -16,8 +16,9 @@ This project is a tool to help hackathon organizers identify potential cheating 
 
 ## Techs used
 - Python
+- SQL
 - Supabase
 - LinkedIn OAuth
+- Flask
 - JavaScript
 - HTML/CSS
-- Flask
