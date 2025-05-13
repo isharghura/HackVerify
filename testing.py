@@ -4,7 +4,14 @@ from supabase import create_client
 from datetime import datetime, timezone
 
 # function to test
-from app import scrape_devpost_link, get_all_github_links, SUPABASE_KEY, SUPABASE_URL
+from app import (
+    get_git_commit_history,
+    sanitize_github_url, 
+    scrape_devpost_link,
+    get_all_github_links,
+    SUPABASE_KEY,
+    SUPABASE_URL,
+)
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -64,5 +71,16 @@ def test_find_githubs():
     else:
         print("test: no data found")
 
+def test_sanitize_github_link():
+    TEST_URL = "https://github.com/isharghura/HackVerify/pulls"
+    print(f"testing with {TEST_URL}")
+
+    sanitize_github_url(TEST_URL)
+
+def get_first_and_last_commit_times():
+    TEST_URL = "https://github.com/isharghura/HackVerify/pulls"
+    print(f"testing with {TEST_URL}")
+    get_git_commit_history(TEST_URL)
+
 if __name__ == "__main__":
-    test_find_githubs()
+    get_first_and_last_commit_times()

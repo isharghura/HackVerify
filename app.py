@@ -14,6 +14,8 @@ import requests
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse, urljoin
+import time
 
 load_dotenv(".env.local")
 
@@ -492,6 +494,26 @@ def get_all_github_links(devpost_link):
     except Exception as e:
         print(f"database error: {str(e)}")
         return None
+
+# in case we're not given base github link
+def sanitize_github_url(github_link):
+    print("splitting link")
+    parsed = urlparse(github_link)
+    path_parts = parsed.path.strip('/').split('/')
+
+    # username/github proj name
+    if len(path_parts) >= 2:
+        base_path = f"/{path_parts[0]}/{path_parts[1]}"
+        print(path_parts)
+        print(f"\n{parsed.scheme}://{parsed.netloc}{base_path}")
+        return f"{parsed.scheme}://{parsed.netloc}{base_path}"
+    print(github_link)
+    return github_link
+
+
+def get_git_commit_history(github_link):
+    # use github API, can't do it without it
+    return None
 
 
 def lambda_handler(event, context):
