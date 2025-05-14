@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 # function to test
 from app import (
-    get_git_commit_history,
+    get_first_last_commit,
     sanitize_github_url, 
     scrape_devpost_link,
     get_all_github_links,
@@ -78,9 +78,9 @@ def test_sanitize_github_link():
     sanitize_github_url(TEST_URL)
 
 def get_first_and_last_commit_times():
-    TEST_URL = "https://github.com/isharghura/HackVerify"
+    TEST_URL = "https://github.com/umairair/cuhacking2025/commits/main/"
     print(f"testing with {TEST_URL}")
-    get_git_commit_history(TEST_URL)
+    get_first_last_commit(TEST_URL)
 
 if __name__ == "__main__":
     get_first_and_last_commit_times()
