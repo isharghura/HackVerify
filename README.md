@@ -17,6 +17,7 @@ This project is a tool to help hackathon organizers identify potential cheating 
 ## Techs used
 - Python
 - Beautiful Soup
+- GitHub API
 - SQL
 - Supabase
 - LinkedIn OAuth
