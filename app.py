@@ -512,10 +512,45 @@ def sanitize_github_url(github_link):
 
 
 def get_git_commit_history(github_link):
-    # use github API, can't do it without it
-    return None
-
-
+    try:
+        parsed = urlparse(github_link)
+        path_parts = parsed.path.strip("/").split("/")
+        if len(path_parts) < 2:
+            return {"error": "Invalid GitHub URL"}
+        
+        owner, repo = path_parts[0], path_parts[1]
+        commits_url = f"https://api.github.com/repos/{owner}/{repo}/commits"
+        
+        # Get last commit
+        last_resp = requests.get(commits_url, params={"per_page": 1})
+        last_resp.raise_for_status()
+        last_commit = last_resp.json()
+        if not last_commit:
+            return {"error": "No commits found"}
+            
+        # Get first commit (with pagination)
+        page = 1
+        while True:
+            first_resp = requests.get(commits_url, params={"per_page": 1, "page": page})
+            first_resp.raise_for_status()
+            commits = first_resp.json()
+            if not commits:
+                break
+            first_commit = commits[0]
+            page += 1
+            if page > 10:  # Safety limit
+                break
+        print(first_commit)
+                
+        return {
+            "first_commit": first_commit["commit"]["author"]["date"],
+            "last_commit": last_commit[0]["commit"]["author"]["date"]
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+    
+    
 def lambda_handler(event, context):
     from werkzeug.wrappers import Request, Response
     from werkzeug.wsgi import responder

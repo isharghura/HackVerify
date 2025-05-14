@@ -78,7 +78,7 @@ def test_sanitize_github_link():
     sanitize_github_url(TEST_URL)
 
 def get_first_and_last_commit_times():
-    TEST_URL = "https://github.com/isharghura/HackVerify/pulls"
+    TEST_URL = "https://github.com/isharghura/HackVerify"
     print(f"testing with {TEST_URL}")
     get_git_commit_history(TEST_URL)
 
