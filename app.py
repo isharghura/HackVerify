@@ -32,6 +32,9 @@ LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
 LINKEDIN_REDIRECT_URI = os.getenv("LINKEDIN_REDIRECT_URI")
 
+# github api token
+GITHUB_API_TOKEN = os.getenv("GITHUB_API_TOKEN")
+
 
 # server static files
 @app.route("/static/<path:filename>")
@@ -504,16 +507,142 @@ def sanitize_github_url(github_link):
     # username/github proj name
     if len(path_parts) >= 2:
         base_path = f"/{path_parts[0]}/{path_parts[1]}"
-        print(path_parts)
-        print(f"\n{parsed.scheme}://{parsed.netloc}{base_path}")
         return f"{parsed.scheme}://{parsed.netloc}{base_path}"
-    print(github_link)
     return github_link
 
 
-def get_git_commit_history(github_link):
-    # use github API, can't do it without it
-    return None
+def get_first_last_commit(github_link):
+    start_time = time.time()
+    result = {}
+    try:
+        parsed_url = urlparse(github_link)
+        path_parts = parsed_url.path.strip("/").split("/")
+
+        if len(path_parts) < 2:
+            result = {"error": "not a valid github link"}
+            end_time = time.time()
+            print(f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}")
+            return result
+
+        owner, repo = path_parts[0], path_parts[1]
+        headers = {
+            "Authorization": GITHUB_API_TOKEN
+        }
+
+        commits_api_url = f"https://api.github.com/repos/{owner}/{repo}/commits"
+
+        # get last commit
+        last_commit_response = requests.get(
+            commits_api_url, headers=headers, params={"per_page": 1}
+        )
+        last_commit_response.raise_for_status()
+
+        last_commit_data = last_commit_response.json()
+        if not last_commit_data:
+            result = {"error": f"no commits found for repository {owner}/{repo}."}
+            end_time = time.time()
+            print(f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}")
+            return result
+
+        last_commit_date = last_commit_data[0]["commit"]["author"]["date"]
+        print(f"Last commit date: {last_commit_date}")
+
+        # get first commit
+        first_commit_page_response = requests.get(
+            commits_api_url, headers=headers, params={"per_page": 100}
+        )
+        first_commit_page_response.raise_for_status()
+
+        commits_on_current_page = first_commit_page_response.json()
+        if not commits_on_current_page:
+            result = {
+                "error": f"no commits found for {github_link}"
+            }
+            end_time = time.time()
+            print(
+                f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}"
+            )
+            return result
+
+        first_commit_date = None
+
+        link_header = first_commit_page_response.headers.get("Link")
+
+        # get to the last page
+        if link_header and 'rel="last"' in link_header:
+            links = requests.utils.parse_header_links(link_header)
+            last_page_url = None
+            for link in links:
+                if link.get("rel") == "last":
+                    last_page_url = link["url"]
+                    break
+
+            if last_page_url:
+                response_last_page = requests.get(last_page_url, headers=headers)
+                response_last_page.raise_for_status()
+                commits_on_last_page = response_last_page.json()
+
+                if commits_on_last_page:
+                    first_commit_date = commits_on_last_page[-1]["commit"]["author"][
+                        "date"
+                    ]
+                else:
+                    print(
+                        "last page is empty, going back to previous page"
+                    )
+                    first_commit_date = commits_on_current_page[-1]["commit"]["author"][
+                        "date"
+                    ]
+            else:
+                print(
+                    "parsing issue with last page, so going back to previous page"
+                )
+                first_commit_date = commits_on_current_page[-1]["commit"]["author"][
+                    "date"
+                ]
+        else:
+            print(
+                "no 'last' link in headers, it's on the first page then"
+            )
+            first_commit_date = commits_on_current_page[-1]["commit"]["author"]["date"]
+
+        print(f"first commit date: {first_commit_date}")
+
+        result = {
+            "first_commit_date": first_commit_date,
+            "last_commit_date": last_commit_date,
+        }
+
+    except requests.exceptions.HTTPError as http_err:
+        error_message = ""
+        if http_err.response.status_code == 404:
+            error_message = f"repo {owner}/{repo} not found or not accessible"
+        elif http_err.response.status_code == 403:
+            error_message = f"cannot access {owner}/{repo}"
+        else:
+            error_message = f"HTTP error occurred: {http_err} (Status: {http_err.response.status_code})"
+        result = {"error": error_message}
+    except requests.exceptions.RequestException as req_err:
+        result = {"error": f"req error occurred: {req_err}"}
+    except KeyError as key_err:
+        result = {
+            "error": f"unexpected struc, couldn't parse it: {key_err}"
+        }
+    except Exception as e:
+        result = {"error": f"unknwon error: {e}"}
+
+    # for testing purpose, seeing how long it took
+    end_time = time.time()
+    duration = end_time - start_time
+    if owner and repo:
+        print(
+            f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}"
+        )
+    else:
+        print(
+            f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}"
+        )
+    return result
 
 
 def lambda_handler(event, context):
