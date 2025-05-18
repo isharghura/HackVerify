@@ -14,6 +14,11 @@ This project is a tool to help hackathon organizers identify potential cheating 
 - Able to submit multiple Devpost links, as long as they are organizers of the hackathon
 - Clean interface for intuitive use
 
+# Upcoming features
+- Use Gen AI techs like GPTZero to analyze code for ai detection
+- Semantic plagarism via OpenAI embeddings
+- suspicious commit patterns using gpt-4 analysis
+
 ## Techs used
 - Python
 - Beautiful Soup
