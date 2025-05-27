@@ -36,14 +36,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     } catch {
                         errorData = { error: await errorResponse.text() };
                     }
-                    throw new Error(errorData.error || errorData.message || "Submission failed");
+                    throw new Error(errorData.error || errorData.message || "submission failed");
                 }
 
                 const data = await response.json();
                 alert("Thanks, reviewing your submission!");
                 form.reset();
             } catch (error) {
-                console.error("Submission error:", error);
+                console.error("submission error:", error);
                 alert(error.message || "Submission failed. Please try again.");
             }
         });
@@ -69,7 +69,7 @@ function checkDashboardAccess() {
             if (response.status === 403 || response.status === 401) {
                 alert("Please login first!");
             } else if (response.ok) {
-                console.log("Welcome to the dashboard!");
+                console.log("welcome to the dashboard!");
             }
         })
         .catch(error => {
@@ -95,15 +95,15 @@ async function handleLogout() {
             } catch {
                 errorData = { error: await errorResponse.text() };
             }
-            throw new Error(errorData.error || "Logout failed");
+            throw new Error(errorData.error || "logout failed");
         }
 
         const data = await response.json();
-        console.log("Logout successful", data);
+        console.log("logout successful", data);
         alert("Logged out successfully!");
         window.location.href = "/";
     } catch (error) {
-        console.error("Logout error:", error);
+        console.error("logout error:", error);
         alert("Logout failed. Please try again.");
     }
 }

@@ -2,6 +2,7 @@ import re
 from bs4 import BeautifulSoup
 from flask import (
     Flask,
+    json,
     jsonify,
     redirect,
     request,
@@ -67,7 +68,7 @@ def linkedin_callback():
     try:
         code = request.args.get("code")
         if not code:
-            return "Missing authorization code", 400
+            return "missing auth code", 400
 
         token_response = requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
@@ -83,7 +84,7 @@ def linkedin_callback():
 
         token_data = token_response.json()
         if "error" in token_data:
-            app.logger.error(f"Token error: {token_data}")
+            app.logger.error(f"token error: {token_data}")
             return f"LinkedIn token error: {token_data.get('error_description')}", 400
 
         access_token = token_data["access_token"]
@@ -101,7 +102,7 @@ def linkedin_callback():
         profile_data = profile_response.json()
 
         if "error" in profile_data:
-            app.logger.error(f"Profile error: {profile_data}")
+            app.logger.error(f"profile error: {profile_data}")
             return f"LinkedIn API error: {profile_data['message']}", 400
 
         user_data = {
@@ -130,7 +131,7 @@ def linkedin_callback():
         return redirect("/dashboard")
 
     except Exception as e:
-        print("Callback error:", str(e))
+        print("callback error:", str(e))
         return "Authentication failed", 500
 
 
@@ -153,7 +154,7 @@ def dashboard():
         return render_template("dashboard.html", user=response.data[0])
 
     except Exception as e:
-        app.logger.error(f"Dashboard error: {str(e)}")
+        app.logger.error(f"dashboard error: {str(e)}")
         return redirect("/")
 
 
@@ -221,7 +222,7 @@ def check_auth():
         }, 200
 
     except Exception as e:
-        app.logger.error(f"Auth check failed: {str(e)}")
+        app.logger.error(f"auth check failed: {str(e)}")
         return {"status": "error", "message": str(e)}, 500
 
 
@@ -257,8 +258,8 @@ def submissions():
             return (
                 jsonify(
                     {
-                        "error": "Rate limit exceeded",
-                        "message": "Only 1 submission allowed every 5 minutes",
+                        "error": "rate limit exceeded",
+                        "message": "only 1 submission allowed every 5 minutes",
                     }
                 ),
                 429,
@@ -277,13 +278,13 @@ def submissions():
     try:
         # is it json?
         if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
+            return jsonify({"error": "request must be JSON"}), 400
 
         data = request.get_json()
         if "devpost" not in data:
-            return jsonify({"error": "Devpost link is required"}), 400
+            return jsonify({"error": "devpost link is required"}), 400
         if "website" not in data:
-            return jsonify({"error": "Hackathon website link is required"}), 400
+            return jsonify({"error": "hackathon website link is required"}), 400
 
         user_response = (
             supabase.table("users")
@@ -293,7 +294,7 @@ def submissions():
         )
 
         if not user_response.data:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({"error": "user not found"}), 404
 
         user = user_response.data[0]
 
@@ -337,11 +338,11 @@ def submissions():
                 500,
             )
 
-        return jsonify({"message": "Submission successful!"}), 200
+        return jsonify({"message": "submission successful!"}), 200
 
     except Exception as e:
-        app.logger.error(f"Submission error: {str(e)}", exc_info=True)
-        return jsonify({"error": "Internal server error", "details": str(e)}), 500
+        app.logger.error(f"submission error: {str(e)}", exc_info=True)
+        return jsonify({"error": "internal server error", "details": str(e)}), 500
 
 
 @app.route("/logout", methods=["POST"])
@@ -440,7 +441,7 @@ def get_github_link(project_link):
 
     except Exception as e:
         print(f"error fetching GitHub link: {e}")
-        return None
+        return "no GitHub link found"
 
 
 @app.route("/get_all_github_links", methods=["POST"])
@@ -474,6 +475,10 @@ def get_all_github_links(devpost_link):
 
             # now we can get the githubs
             for project_link in project_links_list:
+                if not project_link.startswith(("http://", "https://")):
+                    print(f"skipping invalid project link: {project_link}")
+                    all_github_links.append("no GitHub link found")
+                    continue
                 try:
                     github_link = get_github_link(project_link)
                     if github_link:
@@ -481,6 +486,9 @@ def get_all_github_links(devpost_link):
                 except Exception as e:
                     print(f"error fetching GitHub link for {project_link}: {e}")
                     continue
+        else:
+            print(f"no project links found for {devpost_link}")
+            return []
 
     except Exception as e:
         print(f"error fetching all GitHub links: {e}")
@@ -500,7 +508,6 @@ def get_all_github_links(devpost_link):
 
 # in case we're not given base github link
 def sanitize_github_url(github_link):
-    print("splitting link")
     parsed = urlparse(github_link)
     path_parts = parsed.path.strip('/').split('/')
 
@@ -512,22 +519,22 @@ def sanitize_github_url(github_link):
 
 
 def get_first_last_commit(github_link):
-    start_time = time.time()
     result = {}
+    owner, repo = None, None
     try:
+        if not github_link:
+            result = {'error': "not a valid github link"}
+            return result
         parsed_url = urlparse(github_link)
         path_parts = parsed_url.path.strip("/").split("/")
 
         if len(path_parts) < 2:
             result = {"error": "not a valid github link"}
             end_time = time.time()
-            print(f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}")
             return result
 
         owner, repo = path_parts[0], path_parts[1]
-        headers = {
-            "Authorization": GITHUB_API_TOKEN
-        }
+        headers = {"Authorization": f"Bearer {GITHUB_API_TOKEN}"}
 
         commits_api_url = f"https://api.github.com/repos/{owner}/{repo}/commits"
 
@@ -541,11 +548,9 @@ def get_first_last_commit(github_link):
         if not last_commit_data:
             result = {"error": f"no commits found for repository {owner}/{repo}."}
             end_time = time.time()
-            print(f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}")
             return result
 
         last_commit_date = last_commit_data[0]["commit"]["author"]["date"]
-        print(f"Last commit date: {last_commit_date}")
 
         # get first commit
         first_commit_page_response = requests.get(
@@ -559,9 +564,6 @@ def get_first_last_commit(github_link):
                 "error": f"no commits found for {github_link}"
             }
             end_time = time.time()
-            print(
-                f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}"
-            )
             return result
 
         first_commit_date = None
@@ -587,26 +589,18 @@ def get_first_last_commit(github_link):
                         "date"
                     ]
                 else:
-                    print(
-                        "last page is empty, going back to previous page"
-                    )
+                    # last page is empty, going back to previous page
                     first_commit_date = commits_on_current_page[-1]["commit"]["author"][
                         "date"
                     ]
             else:
-                print(
-                    "parsing issue with last page, so going back to previous page"
-                )
+                # parsing issue with last page, so going back to previous page
                 first_commit_date = commits_on_current_page[-1]["commit"]["author"][
                     "date"
                 ]
         else:
-            print(
-                "no 'last' link in headers, it's on the first page then"
-            )
+            # no 'last' link in headers, it's on the first page then
             first_commit_date = commits_on_current_page[-1]["commit"]["author"]["date"]
-
-        print(f"first commit date: {first_commit_date}")
 
         result = {
             "first_commit_date": first_commit_date,
@@ -630,19 +624,195 @@ def get_first_last_commit(github_link):
         }
     except Exception as e:
         result = {"error": f"unknwon error: {e}"}
-
-    # for testing purpose, seeing how long it took
-    end_time = time.time()
-    duration = end_time - start_time
-    if owner and repo:
-        print(
-            f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}"
-        )
-    else:
-        print(
-            f"it took {end_time - start_time:.2f} for get_first_last_commit to execute for {github_link}"
-        )
     return result
+
+
+@app.route("/validate_commits", methods=['POST'])
+def check_and_store_commit_validity(devpost_link_to_check: str):
+    try:
+        # fetch hackathon's data from supabase
+        response = (
+            supabase.table("devpost_hackathons")
+            .select("github_links, datesandtimes")
+            .eq("devpost_link", devpost_link_to_check)
+            .maybe_single()
+            .execute()
+        )
+
+        if not response.data:
+            print(f"no data found for devpost_link: {devpost_link_to_check}")
+            return {"error": f"no data found for devpost_link: {devpost_link_to_check}"}
+
+        hackathon_data = response.data
+        github_links_str_repr = hackathon_data.get("github_links")
+        dates_and_times_str_repr = hackathon_data.get("datesandtimes")
+
+        actual_github_links_list = []
+
+        if isinstance(github_links_str_repr, str) and github_links_str_repr.strip():
+            try:
+                actual_github_links_list = json.loads(github_links_str_repr)
+                if not isinstance(actual_github_links_list, list):
+                    msg = f"parsed 'github_links' is not a list for {devpost_link_to_check}, parsed: {actual_github_links_list}"
+                    print(msg)
+                    return {"error": msg}
+            except json.JSONDecodeError as jde:
+                msg = f"error decoding JSON string from 'github_links' for {devpost_link_to_check}: {jde}, string was: {github_links_str_repr}"
+                print(msg)
+                return {"error": msg}
+        elif github_links_str_repr is None or not github_links_str_repr.strip():
+            print(
+                f"no GitHub links string found or string is empty in db for {devpost_link_to_check}"
+            )
+        else:
+            msg = f"'github_links' field is not a string or is in an unexpected format for {devpost_link_to_check}: {type(github_links_str_repr)}"
+            print(msg)
+            return {"error": msg}
+
+        if not actual_github_links_list:
+            print(
+                f"no GitHub links to process for {devpost_link_to_check} after parsing"
+            )
+            supabase.table("devpost_hackathons").update(
+                {"commit_validity_status": []}
+            ).eq("devpost_link", devpost_link_to_check).execute()
+            return {
+                "message": "no GitHub links to process",
+                "commit_validity_status": [],
+            }
+
+        # parsing dates and times of hackathon + doing some checks
+        if not isinstance(dates_and_times_str_repr, str):
+            msg = f"hackathon 'datesandtimes' field is not a string for {devpost_link_to_check}, expected string like '[\"date1\",\"date2\"]'."
+            print(msg)
+            return {"error": msg}
+        try:
+            dates_and_times_arr = json.loads(dates_and_times_str_repr)
+        except json.JSONDecodeError as jde:
+            msg = f"error decoding JSON string from 'datesandtimes' for {devpost_link_to_check}: {jde}, string was: {dates_and_times_str_repr}"
+            print(msg)
+            return {"error": msg}
+
+        if not isinstance(dates_and_times_arr, list) or len(dates_and_times_arr) != 2:
+            msg = f"parsed 'datesandtimes' is not a list of two elements for {devpost_link_to_check}, parsed: {dates_and_times_arr}"
+            print(msg)
+            return {"error": msg}
+
+        # start + end dates of hackathon
+        hackathon_start_str, hackathon_end_str = (
+            dates_and_times_arr[0],
+            dates_and_times_arr[1],
+        )
+
+        if not isinstance(hackathon_start_str, str) or not isinstance(
+            hackathon_end_str, str
+        ):
+            msg = f"hackathon start or end date in parsed 'datesandtimes' array is not a string for {devpost_link_to_check}"
+            print(msg)
+            return {"error": msg}
+
+        try:
+            # parse ISO string
+            hackathon_start_dt_local = datetime.fromisoformat(hackathon_start_str)
+            hackathon_end_dt_local = datetime.fromisoformat(hackathon_end_str)
+
+            # convert to UTC to be compared with git commits
+            hackathon_start_dt_utc = hackathon_start_dt_local.astimezone(timezone.utc)
+            hackathon_end_dt_utc = hackathon_end_dt_local.astimezone(timezone.utc)
+
+            print(
+                f"hackathon start: {hackathon_start_dt_utc} (UTC)"
+            )
+            print(
+                f"hackathon end: {hackathon_end_dt_utc} (UTC)"
+            )
+
+        except ValueError as ve:
+            return {"error": f"invalid hackathon date format or conversion issue: {ve}"}
+
+        # now go through each github link
+        commit_validity_status = []
+        for gh_link in actual_github_links_list:
+            if not isinstance(gh_link, str):
+                # skip this github link
+                commit_validity_status.append(False)
+                continue
+
+            if gh_link == "no GitHub link found":
+                commit_validity_status.append("NA")
+                continue
+
+            sanitized_link = sanitize_github_url(gh_link)
+            if not sanitized_link:
+                # skip this github link
+                commit_validity_status.append(False)
+                continue
+
+            # processing commits
+            commit_info = get_first_last_commit(sanitized_link)
+
+            if (
+                "error" in commit_info
+                or not commit_info.get("first_commit_date")
+                or not commit_info.get("last_commit_date")
+            ):
+                print(
+                    f"cannot get commit info for {sanitized_link}: {commit_info.get('error', 'Unknown error')}"
+                )
+                commit_validity_status.append(False)
+                continue
+
+            try:
+                # git commits to UTC
+                first_commit_dt_utc = datetime.fromisoformat(
+                    commit_info["first_commit_date"].replace("Z", "+00:00")
+                )
+                last_commit_dt_utc = datetime.fromisoformat(
+                    commit_info["last_commit_date"].replace("Z", "+00:00")
+                )
+
+                # the big check, is first + last commit within hackathon window?
+                is_valid = (
+                    first_commit_dt_utc >= hackathon_start_dt_utc
+                    and last_commit_dt_utc <= hackathon_end_dt_utc
+                    and first_commit_dt_utc <= last_commit_dt_utc
+                )
+
+                commit_validity_status.append(is_valid)
+                if is_valid:
+                    print(
+                        f"VALID: {sanitized_link} (Commits: {first_commit_dt_utc} to {last_commit_dt_utc} UTC)"
+                    )
+                else:
+                    print(
+                        f"INVALID: {sanitized_link} (Commits: {first_commit_dt_utc} to {last_commit_dt_utc} UTC)"
+                    )
+
+            except ValueError as ve:
+                print(f"error parsing commit dates for {sanitized_link}: {ve}")
+                commit_validity_status.append(False)
+            except Exception as e_commit_proc:
+                print(
+                    f"unexpected error processing commit dates for {sanitized_link}: {e_commit_proc}"
+                )
+                commit_validity_status.append(False)
+
+        # send to supabase
+        supabase.table("devpost_hackathons").update(
+            {"commit_validity_status": commit_validity_status}
+        ).eq("devpost_link", devpost_link_to_check).execute()
+
+        print("commit_validity_status column updated to:"+ str(commit_validity_status))
+        return {
+            "devpost_link": devpost_link_to_check,
+            "commit_validity_status": commit_validity_status,
+        }
+
+    except Exception as e:
+        print(
+            f"error in check_and_store_commit_validity for {devpost_link_to_check}: {e}"
+        )
+        return {"error": f"error occurred: {str(e)}"}
 
 
 def lambda_handler(event, context):
