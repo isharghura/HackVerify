@@ -534,9 +534,7 @@ def get_first_last_commit(github_link):
             return result
 
         owner, repo = path_parts[0], path_parts[1]
-        headers = {
-            "Authorization": GITHUB_API_TOKEN
-        }
+        headers = {"Authorization": f"Bearer {GITHUB_API_TOKEN}"}
 
         commits_api_url = f"https://api.github.com/repos/{owner}/{repo}/commits"
 
@@ -626,8 +624,6 @@ def get_first_last_commit(github_link):
         }
     except Exception as e:
         result = {"error": f"unknwon error: {e}"}
-        
-    print(last_commit_response.headers.get("x-ratelimit-remaining"))
     return result
 
 
@@ -806,7 +802,7 @@ def check_and_store_commit_validity(devpost_link_to_check: str):
             {"commit_validity_status": commit_validity_status}
         ).eq("devpost_link", devpost_link_to_check).execute()
 
-        print("commit_validity_status column updated to:"+ commit_validity_status)
+        print("commit_validity_status column updated to:"+ str(commit_validity_status))
         return {
             "devpost_link": devpost_link_to_check,
             "commit_validity_status": commit_validity_status,

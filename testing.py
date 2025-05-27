@@ -89,4 +89,4 @@ def commit_validity():
     check_and_store_commit_validity(TEST_URL)
 
 if __name__ == "__main__":
-    get_first_and_last_commit_times()
+    commit_validity()
