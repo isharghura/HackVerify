@@ -107,3 +107,61 @@ async function handleLogout() {
         alert("Logout failed. Please try again.");
     }
 }
+
+// get user's hackathons if they've been verified
+document.addEventListener('DOMContentLoaded', function () {
+    const linkedinId = document.body.dataset.linkedinId;
+
+    if (!linkedinId) {
+        console.error("No LinkedIn ID found");
+        return;
+    }
+
+    fetch(`/api/user-hackathons/${linkedinId}`)
+        .then(response => {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                return response.text().then(text => {
+                    throw new Error(`expected JSON, got: ${text.substring(0, 100)}...`);
+                });
+            }
+            return response.json();
+        })
+        .then(hackathons => {
+            const hackathonsContainer = document.querySelector('.hackathons-list');
+
+            hackathonsContainer.innerHTML = '';
+
+            if (hackathons.length === 0) {
+                hackathonsContainer.innerHTML = `
+                    <div class="no-hackathons">
+                        <i class="fa-solid fa-info-circle"></i>
+                        No verified hackathons yet
+                    </div>
+                `;
+            }
+
+            hackathons.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            hackathons.forEach(hackathon => {
+                const hackathonTab = document.createElement('div');
+                hackathonTab.className = 'hackathon-tab';
+                hackathonTab.innerHTML = `
+                    <i class="fa-solid fa-trophy"></i>
+                    <span class="hackathon-name">${hackathon.name}</span>
+                    <span class="hackathon-link" title="${hackathon.devpost_link}"></span>
+                `;
+                hackathonsContainer.appendChild(hackathonTab);
+            });
+        })
+        .catch(error => {
+            console.error('error fetching hackathons:', error);
+            const errorContainer = document.querySelector('.hackathons-list');
+            errorContainer.innerHTML = `
+                <div class="error-message">
+                    <i class="fa-solid fa-exclamation-triangle"></i>
+                    Error loading hackathons: ${error.message}
+                </div>
+            `;
+        });
+});

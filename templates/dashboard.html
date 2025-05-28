@@ -9,35 +9,58 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
-<body>
+<body data-linkedin-id="{{ user.linkedin_id }}">
     <i class="fa-solid fa-arrow-right-from-bracket logout-button"></i>
-    <div class="container">
-        <header>
-            <h1>Welcome, {{ user.full_name or user.email }}!</h1>
-        </header>
+    
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>hackverify</h2>
+        </div>
+    
+        <div class="sidebar-tab active" onclick="window.location.href='dashboard'">
+            <i class="fa-solid fa-paper-plane"></i>
+            Submit a Hackathon
+        </div>
+    
+        <div class="sidebar-section-title">Your Hackathons</div>
 
-        <div class="dashboard-content">
-            <div class="spacer"></div>
-            <div class="form-container">
-                <form id="verificationForm" class="main-form">
-                    <div class="form-group">
-                        <label for="devpost">Devpost Link</label>
-                        <input type="url" id="devpost" placeholder="ex: https://cuhacking6.devpost.com" required>
-                        <label for="website">Hackathon's Website</label>
-                        <input type="url" id="website" placeholder="ex: https://cuhacking.ca" required>
-                    </div>
-                    <button type="submit" class="submit-btn">Submit for Verification</button>
-                </form>
-                <div class="reminder-box">
-                    <h3>Verification Process:</h3>
-                    <p><i class="fas fa-info-circle"></i> We need to verify you're a hackathon organizer</p>
-                    <p><i class="fas fa-envelope"></i> You'll receive an email with verification results</p>
-                    <p><i class="fas fa-check-circle"></i> Once verified, you can start cheat checking!</p>
-                    <h4>To make verfication smooth:</h3>
-                        <p>1. Your name is listed on the hackathon website</p>
-                        <p>2. Hackathon has a good social media presence</p>
+        <div class="hackathons-list">
+            <div class="loading-hackathons">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                Loading your hackathons...
+            </div>  
+        </div>
+    
+    </div>
+    <div class="main-content">
+        <div class="container">
+            <header>
+                <h1>Welcome, {{ user.full_name or user.email }}!</h1>
+            </header>
+
+            <div class="dashboard-content">
+                <div class="spacer"></div>
+                <div class="form-container">
+                    <form id="verificationForm" class="main-form">
+                        <div class="form-group">
+                            <label for="devpost">Devpost Link</label>
+                            <input type="url" id="devpost" placeholder="ex: https://cuhacking6.devpost.com" required>
+                            <label for="website">Hackathon's Website</label>
+                            <input type="url" id="website" placeholder="ex: https://cuhacking.ca" required>
                         </div>
-                        </div>
+                        <button type="submit" class="submit-btn">Submit for Verification</button>
+                    </form>
+                    <div class="reminder-box">
+                        <h3>Verification Process:</h3>
+                        <p><i class="fas fa-info-circle"></i> We need to verify you're a hackathon organizer</p>
+                        <p><i class="fas fa-envelope"></i> You'll receive an email with verification results</p>
+                        <p><i class="fas fa-check-circle"></i> Once verified, you can start cheat checking!</p>
+                        <h4>To make verfication smooth:</h3>
+                            <p>1. Your name is listed on the hackathon website</p>
+                            <p>2. Hackathon has a good social media presence</p>
+                            </div>
+                            </div>
+            </div>
         </div>
     </div>
     <script src="/static/dashboard.js"></script>

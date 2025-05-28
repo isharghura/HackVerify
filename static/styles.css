@@ -261,6 +261,106 @@ form {
 .logout-button:hover {
     opacity: 1;
 }
+
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background-color: #2c3e50;
+    color: white;
+    padding: 20px 0;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid #34495e;
+    margin-bottom: 20px;
+}
+
+.sidebar-tab {
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.sidebar-tab:hover {
+    background-color: #34495e;
+}
+
+.sidebar-tab.active {
+    background-color: #3498db;
+}
+
+.sidebar-tab i {
+    margin-right: 10px;
+}
+
+.sidebar-section-title {
+    padding: 10px 20px;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    color: #bdc3c7;
+    margin-top: 20px;
+}
+
+.hackathon-tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.hackathon-tab:hover {
+    background-color: #34495e;
+}
+
+.hackathon-tab i {
+    margin-right: 10px;
+    color: #f1c40f;
+}
+
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+}
+
+.hackathons-list {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.loading-hackathons,
+.no-hackathons,
+.error-message {
+    padding: 10px 20px;
+    color: #bdc3c7;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+.loading-hackathons i,
+.no-hackathons i,
+.error-message i {
+    margin-right: 8px;
+}
+
+.fa-spin {
+    animation: fa-spin 2s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 @media only screen and (max-width: 763px) {
     .container {
         padding: 1.5rem;

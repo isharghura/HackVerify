@@ -815,6 +815,52 @@ def check_and_store_commit_validity(devpost_link_to_check: str):
         return {"error": f"error occurred: {str(e)}"}
 
 
+@app.route("/api/user-hackathons/<linkedin_id>")
+def get_user_hackathons(linkedin_id):
+    try:
+        if not linkedin_id:
+            return jsonify({'error': 'Invalid user ID'}), 400
+
+        response = (
+            supabase.table("devpost_hackathons")
+            .select("linkedin_id, devpost_link, created_at")
+            .eq("linkedin_id", linkedin_id)
+            .execute()
+        )
+
+        if not response.data:
+            return jsonify([])
+
+        # cleaning up
+        hackathons = []
+        for item in response.data:
+            try:
+                url = item["devpost_link"]
+                name = (
+                    url.replace("https://", "")
+                    .replace("http://", "")
+                    .split(".devpost.com")[0]
+                )
+
+                hackathons.append(
+                    {
+                        "linkedin_id": item["linkedin_id"],
+                        "devpost_link": url,
+                        "name": name,
+                        "created_at": item["created_at"],
+                    }
+                )
+            except KeyError as e:
+                print(f"missing key in hackathon data: {e}")
+                continue
+
+        return jsonify(hackathons)
+
+    except Exception as e:
+        print(f"Error fetching hackathons: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+
 def lambda_handler(event, context):
     from werkzeug.wrappers import Request, Response
     from werkzeug.wsgi import responder
