@@ -311,6 +311,8 @@ form {
     cursor: pointer;
     display: flex;
     align-items: center;
+    transition: opacity 0.3s ease, background-color 0.3s ease;
+    position: relative;
 }
 
 .hackathon-tab:hover {
@@ -320,6 +322,34 @@ form {
 .hackathon-tab i {
     margin-right: 10px;
     color: #f1c40f;
+}
+
+.hackathon-tab.processing {
+    opacity: 0.7;
+    pointer-events: none;
+    background-color: #f0f0f0;
+}
+
+.hackathon-tab .fa-trophy {
+    transition: opacity 0.2s ease-in-out;
+}
+
+.hackathon-tab.processing .fa-trophy {
+    opacity: 0;
+}
+
+.hackathon-tab .spinner {
+    display: none;
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #333;
+}
+
+.hackathon-tab.processing .spinner {
+    display: inline-block;
+    animation: fa-spin 1s infinite linear;
 }
 
 .main-content {
@@ -349,6 +379,104 @@ form {
 
 .fa-spin {
     animation: fa-spin 2s infinite linear;
+}
+
+.hackathon-tab.processing .spinner.custom-spin {
+    animation: spin 1s infinite linear;
+}
+
+.view-container {
+    width: 100%;
+}
+
+#hackathon-detail-view-container .container {
+    padding-top: 20px;
+}
+
+#hackathon-detail-name {
+    margin-bottom: 5px;
+}
+
+#hackathon-detail-devpost-link {
+    font-size: 0.9em;
+    color: #007bff;
+    text-decoration: none;
+}
+
+#hackathon-detail-devpost-link:hover {
+    text-decoration: underline;
+}
+
+.hackathon-data-section {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #3f3f3f;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#hackathon-detail-info {
+    margin-bottom: 20px;
+    min-height: 60px;
+}
+
+#hackathon-detail-info .loading-details {
+    color: #6c757d;
+    font-style: italic;
+}
+
+#hackathon-detail-info p {
+    margin: 0.5em 0;
+}
+
+#fetch-data-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#fetch-data-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+#fetch-process-status p {
+    padding: 10px;
+    border-radius: 4px;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+#fetch-process-status .status-info {
+    background-color: #e7f3fe;
+    border-left: 3px solid #2196F3;
+    color: #1c72b3;
+}
+
+#fetch-process-status .status-success {
+    background-color: #e8f5e9;
+    border-left: 3px solid #4CAF50;
+    color: #388e3c;
+}
+
+#fetch-process-status .status-error {
+    background-color: #ffebee;
+    border-left: 3px solid #f44336;
+    color: #c62828;
+}
+
+.sidebar .sidebar-tab.active {
+    background-color: #4a5568;
+}
+
+.sidebar .sidebar-tab:not(.active):hover {
+    background-color: #2d3748;
+}
+
+.no-hackathons i,
+.loading-hackathons i,
+#hackathon-detail-info .loading-details i {
+    margin-right: 8px;
 }
 
 @keyframes fa-spin {

@@ -353,7 +353,12 @@ def logout():
 
 # web scraper to find all projects from devpost link
 @app.route("/scrape_devpost_link", methods=["POST"])
-def scrape_devpost_link(devpost_link: str):
+def scrape_devpost_link_route():
+    data = request.get_json()
+    devpost_link = data.get('devpost_link')
+    if not devpost_link:
+        return jsonify({"error": "devpost_link is required"}), 400
+    
     all_project_links = []
     page = 1
 
@@ -421,6 +426,7 @@ def scrape_devpost_link(devpost_link: str):
             on_conflict="devpost_link",
         ).execute()
         print("all projects stored successfully")
+        return all_project_links
 
     except Exception as e:
         print(f"database error: {str(e)}")
@@ -445,7 +451,12 @@ def get_github_link(project_link):
 
 
 @app.route("/get_all_github_links", methods=["POST"])
-def get_all_github_links(devpost_link):
+def get_all_github_links_route():
+    data = request.get_json()
+    devpost_link = data.get("devpost_link")
+    if not devpost_link:
+        return jsonify({"error": "devpost_link is required"}), 400
+
     all_github_links = []
     try:
         # get projs from supabase
@@ -500,7 +511,9 @@ def get_all_github_links(devpost_link):
             on_conflict="devpost_link",
         ).execute()
         print("all GitHub links stored successfully")
-        return all_github_links
+        if all_github_links is None:
+            return jsonify({"error": "failed to get GitHub links or none found"}), 500
+        return jsonify(all_github_links), 200
 
     except Exception as e:
         print(f"database error: {str(e)}")
@@ -859,6 +872,114 @@ def get_user_hackathons(linkedin_id):
     except Exception as e:
         print(f"Error fetching hackathons: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/hackathon-details", methods=["GET"])
+def get_hackathon_details_route():
+    actual_devpost_link = request.args.get("link")
+
+    if not actual_devpost_link:
+        return jsonify({"error": "devpost link parameter 'link' is required"}), 400
+
+    try:
+        response = (
+            supabase.table("devpost_hackathons")
+            .select(
+                "project_links, github_links, last_scraped_at, datesandtimes"
+            )
+            .eq("devpost_link", actual_devpost_link)
+            .maybe_single()
+            .execute()
+        )
+
+        if not response.data:
+            return (
+                jsonify(
+                    {
+                        "message": "no data found for this hackathon yet",
+                        "data_exists": False,
+                        "devpost_link": actual_devpost_link,
+                    }
+                ),
+                200,
+            )
+
+        db_data = response.data
+        project_links_list = []
+        github_links_list = []
+
+        # parse the project links
+        raw_project_links = db_data.get("project_links")
+        if isinstance(raw_project_links, str) and raw_project_links.strip():
+            try:
+                project_links_list = json.loads(raw_project_links)
+                if not isinstance(project_links_list, list):
+                    project_links_list = []
+            except json.JSONDecodeError:
+                print(
+                    f"warning: could not decode project_links JSON for {actual_devpost_link}"
+                )
+                project_links_list = []
+        elif isinstance(raw_project_links, list):
+            project_links_list = raw_project_links
+
+        # parse github_links
+        raw_github_links = db_data.get("github_links")
+        if isinstance(raw_github_links, str) and raw_github_links.strip():
+            try:
+                github_links_list = json.loads(raw_github_links)
+                if not isinstance(github_links_list, list):
+                    github_links_list = []
+            except json.JSONDecodeError:
+                print(
+                    f"warning: could not decode github_links JSON for {actual_devpost_link}"
+                )
+                github_links_list = []
+        elif isinstance(raw_github_links, list):
+            github_links_list = raw_github_links
+
+        # parse datesandtimes
+        dates_array_for_display = None
+        raw_dates = db_data.get("datesandtimes")
+        if isinstance(raw_dates, str) and raw_dates.strip():
+            try:
+                parsed_dates = json.loads(raw_dates)
+                if isinstance(parsed_dates, list) and len(parsed_dates) == 2:
+                    dates_array_for_display = parsed_dates
+            except json.JSONDecodeError:
+                print(
+                    f"warning: could not decode datesandtimes JSON for {actual_devpost_link}"
+                )
+        elif (
+            isinstance(raw_dates, list) and len(raw_dates) == 2
+        ):
+            dates_array_for_display = raw_dates
+
+        return (
+            jsonify(
+                {
+                    "data_exists": True,
+                    "devpost_link": actual_devpost_link,
+                    "project_count": len(project_links_list),
+                    "github_count": len(github_links_list),
+                    "last_scraped_at": db_data.get("last_scraped_at"),
+                    "datesandtimes": dates_array_for_display,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        print(f"error fetching hackathon details for {actual_devpost_link}: {str(e)}")
+        return (
+            jsonify(
+                {
+                    "error": f"server error fetching details: {str(e)}",
+                    "data_exists": False,
+                }
+            ),
+            500,
+        )
 
 
 def lambda_handler(event, context):
