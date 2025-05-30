@@ -1,16 +1,27 @@
 {
-    "version": 2,
     "builds": [
+        {
+            "src": "templates/index.html",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "templates/dashboard.html",
+            "use": "@vercel/static"
+        },
         {
             "src": "app.py",
             "use": "@vercel/python"
         },
         {
-            "src": "templates/*",
+            "src": "static/styles.css",
             "use": "@vercel/static"
         },
         {
-            "src": "static/*",
+            "src": "static/dashboard.js",
+            "use": "@vercel/static"
+        },
+        {
+            "src": "static/login.js",
             "use": "@vercel/static"
         },
         {
@@ -20,28 +31,32 @@
     ],
     "routes": [
         {
-            "src": "/api/.*",
-            "dest": "app.py"
+            "src": "/images/(.*)",
+            "dest": "/images/$1"
         },
         {
-            "src": "/dashboard",
-            "dest": "/templates/dashboard.html"
+            "src": "/templates/(.*)",
+            "dest": "/templates/$1"
         },
         {
             "src": "/",
             "dest": "/templates/index.html"
         },
         {
+            "src": "/",
+            "dest": "/templates/dashboard.html"
+        },
+        {
             "src": "/static/(.*)",
             "dest": "/static/$1"
         },
         {
-            "src": "/images/(.*)",
-            "dest": "/images/$1"
-        },
-        {
             "src": "/(.*)",
             "dest": "app.py"
+        },
+        {
+            "src": "/favicon.ico",
+            "dest": "/images/favicon.ico"
         }
     ]
 }
