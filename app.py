@@ -353,7 +353,12 @@ def logout():
 
 # web scraper to find all projects from devpost link
 @app.route("/scrape_devpost_link", methods=["POST"])
-def scrape_devpost_link(devpost_link: str):
+def scrape_devpost_link_route():
+    data = request.get_json()
+    devpost_link = data.get('devpost_link')
+    if not devpost_link:
+        return jsonify({"error": "devpost_link is required"}), 400
+    
     all_project_links = []
     page = 1
 
@@ -421,6 +426,7 @@ def scrape_devpost_link(devpost_link: str):
             on_conflict="devpost_link",
         ).execute()
         print("all projects stored successfully")
+        return all_project_links
 
     except Exception as e:
         print(f"database error: {str(e)}")
@@ -445,7 +451,12 @@ def get_github_link(project_link):
 
 
 @app.route("/get_all_github_links", methods=["POST"])
-def get_all_github_links(devpost_link):
+def get_all_github_links_route():
+    data = request.get_json()
+    devpost_link = data.get("devpost_link")
+    if not devpost_link:
+        return jsonify({"error": "devpost_link is required"}), 400
+
     all_github_links = []
     try:
         # get projs from supabase
@@ -500,7 +511,9 @@ def get_all_github_links(devpost_link):
             on_conflict="devpost_link",
         ).execute()
         print("all GitHub links stored successfully")
-        return all_github_links
+        if all_github_links is None:
+            return jsonify({"error": "failed to get GitHub links or none found"}), 500
+        return jsonify(all_github_links), 200
 
     except Exception as e:
         print(f"database error: {str(e)}")
@@ -628,7 +641,13 @@ def get_first_last_commit(github_link):
 
 
 @app.route("/validate_commits", methods=['POST'])
-def check_and_store_commit_validity(devpost_link_to_check: str):
+def check_and_store_commit_validity():
+    data = request.get_json()
+    if not data or "devpost_link_to_check" not in data:
+        return jsonify({"error": "Missing 'devpost_link_to_check' in JSON body"}), 400
+
+    devpost_link_to_check = data["devpost_link_to_check"]
+    
     try:
         # fetch hackathon's data from supabase
         response = (
@@ -779,6 +798,8 @@ def check_and_store_commit_validity(devpost_link_to_check: str):
                 )
 
                 commit_validity_status.append(is_valid)
+                
+                # testing
                 if is_valid:
                     print(
                         f"VALID: {sanitized_link} (Commits: {first_commit_dt_utc} to {last_commit_dt_utc} UTC)"
@@ -815,8 +836,139 @@ def check_and_store_commit_validity(devpost_link_to_check: str):
         return {"error": f"error occurred: {str(e)}"}
 
 
-def lambda_handler(event, context):
-    from werkzeug.wrappers import Request, Response
+@app.route("/api/user-hackathons/<linkedin_id>")
+def get_user_hackathons(linkedin_id):
+    try:
+        if not linkedin_id:
+            return jsonify({'error': 'Invalid user ID'}), 400
+
+        response = (
+            supabase.table("devpost_hackathons")
+            .select("linkedin_id, devpost_link, created_at")
+            .eq("linkedin_id", linkedin_id)
+            .execute()
+        )
+
+        if not response.data:
+            return jsonify([])
+
+        # cleaning up
+        hackathons = []
+        for item in response.data:
+            try:
+                url = item["devpost_link"]
+                name = (
+                    url.replace("https://", "")
+                    .replace("http://", "")
+                    .split(".devpost.com")[0]
+                )
+
+                hackathons.append(
+                    {
+                        "linkedin_id": item["linkedin_id"],
+                        "devpost_link": url,
+                        "name": name,
+                        "created_at": item["created_at"],
+                    }
+                )
+            except KeyError as e:
+                print(f"missing key in hackathon data: {e}")
+                continue
+
+        return jsonify(hackathons)
+
+    except Exception as e:
+        print(f"Error fetching hackathons: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/hackathon-details", methods=["GET"])
+def get_hackathon_details_route():
+    actual_devpost_link = request.args.get("link")
+
+    if not actual_devpost_link:
+        return jsonify({"error": "devpost link parameter 'link' is required"}), 400
+
+    try:
+        response = (
+            supabase.table("devpost_hackathons")
+            .select("project_links, github_links, last_scraped_at, datesandtimes, commit_validity_status")
+            .eq("devpost_link", actual_devpost_link)
+            .maybe_single()
+            .execute()
+        )
+
+        if not response.data:
+            return (
+                jsonify(
+                    {
+                        "message": "no data found for this hackathon yet",
+                        "data_exists": False,
+                        "devpost_link": actual_devpost_link,
+                    }
+                ),
+                200,
+            )
+
+        db_data = response.data
+
+        def parse_json_array_field(field_data):
+            parsed_list = []
+            if isinstance(field_data, str) and field_data.strip():
+                try:
+                    parsed_list = json.loads(field_data)
+                    if not isinstance(parsed_list, list):
+                        parsed_list = []
+                except json.JSONDecodeError:
+                    parsed_list = []
+            elif isinstance(field_data, list):
+                parsed_list = field_data
+            return parsed_list
+
+        project_links_list = parse_json_array_field(db_data.get("project_links"))
+        github_links_list = parse_json_array_field(db_data.get("github_links"))
+        commit_status_list = parse_json_array_field(db_data.get("commit_validity_status"))
+
+        dates_array_for_display = None
+        raw_dates = db_data.get("datesandtimes")
+        if isinstance(raw_dates, str) and raw_dates.strip():
+            try:
+                parsed_dates = json.loads(raw_dates)
+                if isinstance(parsed_dates, list) and len(parsed_dates) == 2:
+                    dates_array_for_display = parsed_dates
+            except json.JSONDecodeError:
+                print(f"warning: could not decode datesandtimes JSON for {actual_devpost_link}")
+        elif isinstance(raw_dates, list) and len(raw_dates) == 2:
+            dates_array_for_display = raw_dates
+
+        return (
+            jsonify(
+                {
+                    "data_exists": True,
+                    "devpost_link": actual_devpost_link,
+                    "project_count": len(project_links_list),
+                    "last_scraped_at": db_data.get("last_scraped_at"),
+                    "datesandtimes": dates_array_for_display,
+                    "project_links": project_links_list,
+                    "github_links": github_links_list,
+                    "commit_validity_status": commit_status_list,
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        import traceback
+        print(f"error fetching hackathon details for {actual_devpost_link}: {str(e)}\n{traceback.format_exc()}")
+        return (
+            jsonify(
+                {"error": f"server error fetching details.", "data_exists": False}),
+                500,
+                )
+
+
+def lambda_handler(event):
+    from werkzeug.wrappers import Request
     from werkzeug.wsgi import responder
     from werkzeug.exceptions import HTTPException
 

@@ -7,9 +7,9 @@ from datetime import datetime, timezone
 from app import (
     check_and_store_commit_validity,
     get_first_last_commit,
-    sanitize_github_url, 
-    scrape_devpost_link,
-    get_all_github_links,
+    sanitize_github_url,
+    scrape_devpost_link_route,
+    get_all_github_links_route,
     SUPABASE_KEY,
     SUPABASE_URL,
 )
@@ -21,7 +21,7 @@ def test_find_projects():
     TEST_URL = "https://cuhacking6.devpost.com"
     print(f"testing with {TEST_URL}")
 
-    scrape_devpost_link(TEST_URL)
+    scrape_devpost_link_route(TEST_URL)
 
     # verify
     result = (
@@ -49,7 +49,7 @@ def test_find_githubs():
     TEST_URL = "https://cuhacking6.devpost.com"
     print(f"testing with {TEST_URL}")
 
-    get_all_github_links(TEST_URL)
+    get_all_github_links_route(TEST_URL)
 
     # verify
     result = (
