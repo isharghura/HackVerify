@@ -925,17 +925,9 @@ def get_hackathon_details_route():
                 parsed_list = field_data
             return parsed_list
 
-        project_links_list = parse_json_array_field(
-            db_data.get("project_links"), "project_links", actual_devpost_link
-        )
-        github_links_list = parse_json_array_field(
-            db_data.get("github_links"), "github_links", actual_devpost_link
-        )
-        commit_status_list = parse_json_array_field(
-            db_data.get("commit_validity_status"),
-            "commit_validity_status",
-            actual_devpost_link,
-        )
+        project_links_list = parse_json_array_field(db_data.get("project_links"))
+        github_links_list = parse_json_array_field(db_data.get("github_links"))
+        commit_status_list = parse_json_array_field(db_data.get("commit_validity_status"))
 
         dates_array_for_display = None
         raw_dates = db_data.get("datesandtimes")
