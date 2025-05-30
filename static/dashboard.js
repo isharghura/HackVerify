@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            const cleanedDevpostLink = cleanDevpostLink(devpostInput.value);
+
             try {
                 const response = await fetch("/api/submissions", {
                     method: "POST",
@@ -22,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        devpost: document.getElementById("devpost").value,
+                        devpost: cleanDevpostLink,
                         website: document.getElementById("website").value
                     }),
                     credentials: "include"
@@ -197,6 +199,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // display hackathon's details that was clicked
     async function displayHackathonDetails(name, devpostLink) {
+        const cleanedDevpostLink = cleanDevpostLink(devpostLink);
+        detailDevpostLink.href = cleanedDevpostLink;
+
         detailHackathonName.textContent = name;
         detailDevpostLink.href = devpostLink;
         const displayDevpostName = devpostLink.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
@@ -213,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             // see if backend already has hackathon's data
-            const initialDetailsResponse = await fetch(`/api/hackathon-details?link=${encodeURIComponent(devpostLink)}`);
+            const initialDetailsResponse = await fetch(`/api/hackathon-details?link=${encodeURIComponent(cleanedDevpostLink)}`);
             if (!initialDetailsResponse.ok) {
                 const errorData = await initialDetailsResponse.json().catch(() => ({ error: "failed to parse error response" }));
                 throw new Error(`failed to fetch initial details (${initialDetailsResponse.status}): ${errorData.error || initialDetailsResponse.statusText}`);
@@ -247,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const validateResponse = await fetch('/validate_commits', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ devpost_link_to_check: devpostLink })
+                        body: JSON.stringify({ devpost_link_to_check: cleanedDevpostLink })
                     });
                     const validationResult = await validateResponse.json();
 
@@ -359,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </details>
             `;
         } else {
-            flaggedProjectsHtml = `<p><i class="fa-solid fa-check-circle" style="color: green;"></i> No projects flagged for commit timeframe violations.</p>`;
+            flaggedProjectsHtml = `<p><i class="fa-solid fa-check-circle" style="color: green;"></i> No projects flagged for commiting outside the timeframe!</p>`;
         }
 
         // dropdown menu for NA github links
@@ -392,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // call our apis to get data
     if (fetchDataButton) {
-        fetchDataButton.addEventListener('click', async function () { // Assuming handleFetchHackathonData logic is inlined or called
+        fetchDataButton.addEventListener('click', async function () {
             const button = this;
 
             // error checking
@@ -400,6 +405,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('fetch-process-status').innerHTML = `<p class="status-error">error: No active hackathon selected to fetch data for</p>`;
                 return;
             }
+
+            const cleanedDevpostLink = cleanDevpostLink(currentActiveHackathonLink);
 
             // extracting data / loading message
             button.disabled = true;
@@ -412,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const scrapeResponse = await fetch('/scrape_devpost_link', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ devpost_link: currentActiveHackathonLink })
+                    body: JSON.stringify({ devpost_link: cleanedDevpostLink })
                 });
                 const scrapeResult = await scrapeResponse.json();
                 if (!scrapeResponse.ok) throw new Error(scrapeResult.error || `scraping devpost failed (${scrapeResponse.status})`);
@@ -449,3 +456,15 @@ document.addEventListener('DOMContentLoaded', function () {
     setActiveSidebarTab(submitHackathonTab);
     loadUserHackathons();
 });
+
+// clean devpost url
+function cleanDevpostLink(url) {
+    if (!url) return url;
+    try {
+        const parsed = new URL(url);
+        return `${parsed.protocol}//${parsed.hostname}${parsed.pathname}`.replace(/\/$/, '');
+    } catch (e) {
+        console.error("Invalid URL:", url);
+        return url;
+    }
+}

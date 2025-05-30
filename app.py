@@ -15,7 +15,7 @@ import requests
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin, urlunparse
 import time
 
 load_dotenv(".env.local")
@@ -358,7 +358,20 @@ def scrape_devpost_link_route():
     devpost_link = data.get('devpost_link')
     if not devpost_link:
         return jsonify({"error": "devpost_link is required"}), 400
-    
+
+    # parse devpost link, remove params, query, fragments
+    parsed_url = urlparse(devpost_link)
+    devpost_link = urlunparse(
+        (
+            parsed_url.scheme,
+            parsed_url.netloc,
+            parsed_url.path,
+            None,
+            None,
+            None,
+        )
+    ).rstrip("/")
+
     all_project_links = []
     page = 1
 
@@ -373,7 +386,7 @@ def scrape_devpost_link_route():
         response = requests.get(devpost_dates_url)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
-        
+
         submissions_row = soup.find('td', string='Submissions').find_parent('tr')
 
         date_tags = submissions_row.find_all('td', attrs={"data-iso-date": True})
