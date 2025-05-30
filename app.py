@@ -373,10 +373,10 @@ def scrape_devpost_link_route():
         response = requests.get(devpost_dates_url)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
+        
+        submissions_row = soup.find('td', string='Submissions').find_parent('tr')
 
-        date_tags = soup.find_all(
-            "td", attrs={"data-iso-date": True}, class_=lambda x: x != "active"
-        )
+        date_tags = submissions_row.find_all('td', attrs={"data-iso-date": True})
 
         for tag in date_tags:
             iso_date = tag["data-iso-date"]
