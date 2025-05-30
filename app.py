@@ -641,7 +641,13 @@ def get_first_last_commit(github_link):
 
 
 @app.route("/validate_commits", methods=['POST'])
-def check_and_store_commit_validity(devpost_link_to_check: str):
+def check_and_store_commit_validity():
+    data = request.get_json()
+    if not data or "devpost_link_to_check" not in data:
+        return jsonify({"error": "Missing 'devpost_link_to_check' in JSON body"}), 400
+
+    devpost_link_to_check = data["devpost_link_to_check"]
+    
     try:
         # fetch hackathon's data from supabase
         response = (
@@ -792,6 +798,8 @@ def check_and_store_commit_validity(devpost_link_to_check: str):
                 )
 
                 commit_validity_status.append(is_valid)
+                
+                # testing
                 if is_valid:
                     print(
                         f"VALID: {sanitized_link} (Commits: {first_commit_dt_utc} to {last_commit_dt_utc} UTC)"
@@ -884,9 +892,7 @@ def get_hackathon_details_route():
     try:
         response = (
             supabase.table("devpost_hackathons")
-            .select(
-                "project_links, github_links, last_scraped_at, datesandtimes"
-            )
+            .select("project_links, github_links, last_scraped_at, datesandtimes, commit_validity_status")
             .eq("devpost_link", actual_devpost_link)
             .maybe_single()
             .execute()
@@ -905,40 +911,32 @@ def get_hackathon_details_route():
             )
 
         db_data = response.data
-        project_links_list = []
-        github_links_list = []
 
-        # parse the project links
-        raw_project_links = db_data.get("project_links")
-        if isinstance(raw_project_links, str) and raw_project_links.strip():
-            try:
-                project_links_list = json.loads(raw_project_links)
-                if not isinstance(project_links_list, list):
-                    project_links_list = []
-            except json.JSONDecodeError:
-                print(
-                    f"warning: could not decode project_links JSON for {actual_devpost_link}"
-                )
-                project_links_list = []
-        elif isinstance(raw_project_links, list):
-            project_links_list = raw_project_links
+        def parse_json_array_field(field_data):
+            parsed_list = []
+            if isinstance(field_data, str) and field_data.strip():
+                try:
+                    parsed_list = json.loads(field_data)
+                    if not isinstance(parsed_list, list):
+                        parsed_list = []
+                except json.JSONDecodeError:
+                    parsed_list = []
+            elif isinstance(field_data, list):
+                parsed_list = field_data
+            return parsed_list
 
-        # parse github_links
-        raw_github_links = db_data.get("github_links")
-        if isinstance(raw_github_links, str) and raw_github_links.strip():
-            try:
-                github_links_list = json.loads(raw_github_links)
-                if not isinstance(github_links_list, list):
-                    github_links_list = []
-            except json.JSONDecodeError:
-                print(
-                    f"warning: could not decode github_links JSON for {actual_devpost_link}"
-                )
-                github_links_list = []
-        elif isinstance(raw_github_links, list):
-            github_links_list = raw_github_links
+        project_links_list = parse_json_array_field(
+            db_data.get("project_links"), "project_links", actual_devpost_link
+        )
+        github_links_list = parse_json_array_field(
+            db_data.get("github_links"), "github_links", actual_devpost_link
+        )
+        commit_status_list = parse_json_array_field(
+            db_data.get("commit_validity_status"),
+            "commit_validity_status",
+            actual_devpost_link,
+        )
 
-        # parse datesandtimes
         dates_array_for_display = None
         raw_dates = db_data.get("datesandtimes")
         if isinstance(raw_dates, str) and raw_dates.strip():
@@ -947,12 +945,8 @@ def get_hackathon_details_route():
                 if isinstance(parsed_dates, list) and len(parsed_dates) == 2:
                     dates_array_for_display = parsed_dates
             except json.JSONDecodeError:
-                print(
-                    f"warning: could not decode datesandtimes JSON for {actual_devpost_link}"
-                )
-        elif (
-            isinstance(raw_dates, list) and len(raw_dates) == 2
-        ):
+                print(f"warning: could not decode datesandtimes JSON for {actual_devpost_link}")
+        elif isinstance(raw_dates, list) and len(raw_dates) == 2:
             dates_array_for_display = raw_dates
 
         return (
@@ -961,29 +955,28 @@ def get_hackathon_details_route():
                     "data_exists": True,
                     "devpost_link": actual_devpost_link,
                     "project_count": len(project_links_list),
-                    "github_count": len(github_links_list),
                     "last_scraped_at": db_data.get("last_scraped_at"),
                     "datesandtimes": dates_array_for_display,
+                    "project_links": project_links_list,
+                    "github_links": github_links_list,
+                    "commit_validity_status": commit_status_list,
                 }
             ),
             200,
         )
 
     except Exception as e:
-        print(f"error fetching hackathon details for {actual_devpost_link}: {str(e)}")
+        import traceback
+        print(f"error fetching hackathon details for {actual_devpost_link}: {str(e)}\n{traceback.format_exc()}")
         return (
             jsonify(
-                {
-                    "error": f"server error fetching details: {str(e)}",
-                    "data_exists": False,
-                }
-            ),
-            500,
-        )
+                {"error": f"server error fetching details.", "data_exists": False}),
+                500,
+                )
 
 
-def lambda_handler(event, context):
-    from werkzeug.wrappers import Request, Response
+def lambda_handler(event):
+    from werkzeug.wrappers import Request
     from werkzeug.wsgi import responder
     from werkzeug.exceptions import HTTPException
 

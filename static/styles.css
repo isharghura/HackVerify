@@ -430,6 +430,9 @@ form {
 }
 
 #fetch-data-button {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -477,6 +480,63 @@ form {
 .loading-hackathons i,
 #hackathon-detail-info .loading-details i {
     margin-right: 8px;
+}
+
+#hackathon-detail-info details {
+    margin-top: 15px;
+    border-radius: 5px;
+    background-color: #13181f;
+}
+#hackathon-detail-info summary {
+    padding: 10px 15px;
+    font-weight: bold;
+    cursor: pointer;
+    outline: none;
+    background-color: #2d3748;
+    border-bottom: 1px solid #1f2631;
+    list-style-position: inside;
+}
+
+#hackathon-detail-info details ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#hackathon-detail-info details li {
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+#hackathon-detail-info details li:last-child {
+    border-bottom: none;
+}
+
+#hackathon-detail-info details li a {
+    color: #ffffff;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+#hackathon-detail-info details li a:hover {
+    text-decoration: underline;
+}
+
+#hackathon-detail-info .project-entry-devpost {
+    display: block;
+    margin-bottom: 3px;
+}
+
+#hackathon-detail-info .project-entry-github {
+    display: block;
+    font-size: 0.95em;
+}
+
+#hackathon-detail-info .no-github-text {
+    color: #6c757d;
+    font-style: italic;
 }
 
 @keyframes fa-spin {

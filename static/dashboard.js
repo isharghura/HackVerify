@@ -199,103 +199,250 @@ document.addEventListener('DOMContentLoaded', function () {
     async function displayHackathonDetails(name, devpostLink) {
         detailHackathonName.textContent = name;
         detailDevpostLink.href = devpostLink;
-        detailDevpostLink.textContent = devpostLink.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+        const displayDevpostName = devpostLink.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
+        detailDevpostLink.textContent = displayDevpostName ? displayDevpostName : "View on Devpost";
 
+        const detailInfoDiv = document.getElementById('hackathon-detail-info');
+        const fetchStatusDiv = document.getElementById('fetch-process-status');
+        const fetchDataButton = document.getElementById('fetch-data-button');
+
+        // spinning wheel
         detailInfoDiv.innerHTML = `<div class="loading-details"><i class="fa-solid fa-spinner fa-spin"></i> Loading hackathon details...</div>`;
         fetchStatusDiv.innerHTML = '';
-        fetchDataButton.disabled = false;
-        fetchDataButton.innerHTML = '<i class="fa-solid fa-cloud-download"></i> Fetch/Refresh Hackathon Data';
-
+        if (fetchDataButton) fetchDataButton.disabled = true;
 
         try {
-            const response = await fetch(`/api/hackathon-details?link=${encodeURIComponent(devpostLink)}`);
-            if (!response.ok) throw new Error(`failed to fetch details: ${response.statusText}`);
-            const data = await response.json();
+            // see if backend already has hackathon's data
+            const initialDetailsResponse = await fetch(`/api/hackathon-details?link=${encodeURIComponent(devpostLink)}`);
+            if (!initialDetailsResponse.ok) {
+                const errorData = await initialDetailsResponse.json().catch(() => ({ error: "failed to parse error response" }));
+                throw new Error(`failed to fetch initial details (${initialDetailsResponse.status}): ${errorData.error || initialDetailsResponse.statusText}`);
+            }
+            const initialData = await initialDetailsResponse.json();
 
-            if (data.error) {
-                detailInfoDiv.innerHTML = `<p class="error-message"><i class="fa-solid fa-circle-exclamation"></i> error: ${data.error}</p>`;
-                return;
+            if (initialData.error) {
+                throw new Error(`${initialData.error}`);
             }
 
-            updateDetailInfo(data);
+            let {
+                project_links: projectLinks,
+                github_links: githubLinks,
+                commit_validity_status: commitStatus,
+            } = initialData
+
+            projectLinks = projectLinks || [];
+            githubLinks = githubLinks || [];
+            commitStatus = commitStatus || [];
+
+            // do we need to validate data or can we just pull from our database without doing any checks
+            if (projectLinks.length > 0 && commitStatus.length === 0 || projectLinks.length > commitStatus.length) {
+                let verificationReason = commitStatus.length === 0
+                    ? "Commit not yet verified."
+                    : `New projects detected, re-validating.`;
+
+                fetchStatusDiv.innerHTML = `<p class="status-info"><i class="fa-solid fa-gears fa-spin"></i> ${verificationReason} Validating now...</p>`;
+                detailInfoDiv.innerHTML = `<p class="status-info"><i class="fa-solid fa-gears fa-spin"></i> Please wait, running commit validation for ${projectLinks.length} projects, this might take a while...</p>`;
+
+                try {
+                    const validateResponse = await fetch('/validate_commits', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ devpost_link_to_check: devpostLink })
+                    });
+                    const validationResult = await validateResponse.json();
+
+                    if (!validateResponse.ok || validationResult.error) {
+                        throw new Error(validationResult.error || `commit verification call failed (${validateResponse.status})`);
+                    }
+
+                    // verified, now we can update commit status
+                    commitStatus = validationResult.commit_validity_status || [];
+                    initialData.commit_validity_status = commitStatus;
+                    fetchStatusDiv.innerHTML = `<p class="status-success"><i class="fa-solid fa-check-circle"></i> Commit verification complete!</p>`;
+                } catch (validationError) {
+                    console.error("error during commit verification:", validationError);
+                    fetchStatusDiv.innerHTML = `<p class="status-error"><i class="fa-solid fa-triangle-exclamation"></i> Auto commit verification failed: ${validationError.message}, try again!</p>`;
+                }
+            } else if (projectLinks.length === 0) {
+                fetchStatusDiv.innerHTML = `<p class="status-info">No projects found for this hackathon, fetch the hackathon's data first!</p>`;
+            } else {
+                fetchStatusDiv.innerHTML = `<p class="status-info">Project details and commits loaded</p>`;
+            }
+
+            // update ui
+            updateDetailInfo({
+                data_exists: initialData.data_exists,
+                last_scraped_at: initialData.last_scraped_at,
+                datesandtimes: initialData.datesandtimes,
+                project_links: projectLinks,
+                github_links: githubLinks,
+                commit_validity_status: commitStatus
+            });
 
         } catch (error) {
-            console.error("error loading hackathon details:", error);
-            detailInfoDiv.innerHTML = `<p class="error-message"><i class="fa-solid fa-triangle-exclamation"></i> could not load details ${error.message}</p>`;
+            console.error("error in displayHackathonDetails:", error);
+            detailInfoDiv.innerHTML = `<p class="error-message"><i class="fa-solid fa-triangle-exclamation"></i> Error loading details: ${error.message}</p>`;
+            fetchStatusDiv.innerHTML = `<p class="status-error"><i class="fa-solid fa-triangle-exclamation"></i> Failed to display hackathon details: ${error.message}</p>`;
+        } finally {
+            if (fetchDataButton) fetchDataButton.disabled = false;
         }
     }
-
+    
+    // update the info that is currently known about the hackathon
     function updateDetailInfo(data) {
-        if (data.data_exists === false || (data.project_count === 0 && data.github_count === 0 && !data.last_scraped_at)) {
-            detailInfoDiv.innerHTML = `<p><i class="fa-solid fa-info-circle"></i> No data has been fetched for this hackathon yet.</p>`;
-        } else {
-            let datesHtml = "not available";
-            if (data.datesandtimes && Array.isArray(data.datesandtimes) && data.datesandtimes.length === 2) {
-                try {
-                    const startDate = new Date(data.datesandtimes[0]).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    const endDate = new Date(data.datesandtimes[1]).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                    datesHtml = `<strong>Period:</strong> ${startDate} - ${endDate}`;
-                } catch (e) { console.warn("error formatting dates:", e); }
-            }
-
-            detailInfoDiv.innerHTML = `
-                <p><strong>Last fetched:</strong> ${data.last_scraped_at ? new Date(data.last_scraped_at).toLocaleString() : 'Never'}</p>
-                <p>${datesHtml}</p>
-                <p><strong>Projects Found:</strong> ${data.project_count !== undefined ? data.project_count : 'N/A'}</p>
-                <p><strong>GitHub Links Found:</strong> ${data.github_count !== undefined ? data.github_count : 'N/A'}</p>
-            `;
-        }
-    }
-
-    // call apis to get data
-    fetchDataButton.addEventListener('click', async function () {
-        if (!currentActiveHackathonLink) {
-            fetchStatusDiv.innerHTML = `<p class="status-error">Error: No active hackathon selected.</p>`;
+        const detailInfoDiv = document.getElementById('hackathon-detail-info');
+        if (!detailInfoDiv) {
+            console.error("detailInfoDiv not found!");
             return;
         }
 
-        this.disabled = true;
-        this.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
-        fetchStatusDiv.innerHTML = `<p class="status-info">Step 1/2: Scraping Devpost for project links...</p>`;
-
-        try {
-            // scrape devpost
-            const scrapeResponse = await fetch('/scrape_devpost_link', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ devpost_link: currentActiveHackathonLink })
-            });
-            const scrapeResult = await scrapeResponse.json();
-            if (!scrapeResponse.ok) {
-                throw new Error(scrapeResult.error || `Scraping Devpost failed (${scrapeResponse.status})`);
-            }
-            const projectsMsg = scrapeResult.message || (scrapeResult.project_links ? `Found ${scrapeResult.project_links.length} projects.` : "Projects found.");
-            fetchStatusDiv.innerHTML = `<p class="status-info">Step 1/2: ${projectsMsg}<br>Step 2/2: Fetching GitHub links...</p>`;
-
-            // get github links
-            const githubResponse = await fetch('/get_all_github_links', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ devpost_link: currentActiveHackathonLink })
-            });
-            const githubResult = await githubResponse.json();
-            if (!githubResponse.ok) {
-                throw new Error(githubResult.error || `Fetching GitHub links failed (${githubResponse.status})`);
-            }
-            const githubsMsg = Array.isArray(githubResult) ? `Found ${githubResult.length} GitHub links.` : "GitHub links processed.";
-            fetchStatusDiv.innerHTML = `<p class="status-success"><i class="fa-solid fa-check-circle"></i> Processing complete! ${githubsMsg}</p>`;
-
-            // display these results
-            await displayHackathonDetails(detailHackathonName.textContent, currentActiveHackathonLink);
-
-        } catch (error) {
-            console.error('error during hackathon data fetch process:', error);
-            fetchStatusDiv.innerHTML = `<p class="status-error"><i class="fa-solid fa-triangle-exclamation"></i> Error: ${error.message}</p>`;
-        } finally {
-            this.disabled = false;
-            this.innerHTML = '<i class="fa-solid fa-cloud-download"></i> Fetch/Refresh Hackathon Data';
+        if (data.data_exists === false || !data.project_links || data.project_links.length === 0) {
+            detailInfoDiv.innerHTML = `<p><i class="fa-solid fa-info-circle"></i> No project data has been fetched or found for this hackathon yet</p>`;
+            return;
         }
-    });
+
+        let basicInfoHtml = '';
+        let datesHtml = "Not available";
+        if (data.datesandtimes && Array.isArray(data.datesandtimes) && data.datesandtimes.length === 2) {
+            try {
+                // clean formatting
+                const startDate = new Date(data.datesandtimes[0]).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const endDate = new Date(data.datesandtimes[1]).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                datesHtml = `<strong>Period:</strong> ${startDate} - ${endDate}`;
+            } catch (e) { console.warn("error formatting dates:", e); }
+        }
+
+        basicInfoHtml = `
+            <p><strong>Last Fetched:</strong> ${data.last_scraped_at ? new Date(data.last_scraped_at).toLocaleString() : 'Never'}</p>
+            <p>${datesHtml}</p>
+            <p><strong>Total Projects Processed:</strong> ${data.project_links ? data.project_links.length : 'N/A'}</p>
+        `;
+
+        // projects that are flagged or don't have a github link in them
+        const flaggedProjects = [];
+        const naGithubProjects = [];
+
+        const projectLinks = data.project_links || [];
+        const githubLinks = data.github_links || [];
+        const commitStatus = data.commit_validity_status || [];
+
+        // indexing is correlated between projectLinks, githubLinks, and commitStatus
+        for (let i = 0; i < projectLinks.length; i++) {
+            const projectLink = projectLinks[i];
+            const githubLink = githubLinks.length > i ? githubLinks[i] : "Data missing";
+            const status = commitStatus.length > i ? commitStatus[i] : "Data missing";
+
+            if (status === false) {
+                flaggedProjects.push({ projectLink, githubLink });
+            } else if (status === "NA") {
+                naGithubProjects.push({ projectLink, githubLink });
+            }
+        }
+
+        // dropdown menu for flagged projs
+        let flaggedProjectsHtml = '';
+        if (flaggedProjects.length > 0) {
+            const listItems = flaggedProjects.map(item => {
+                const ghLinkText = (item.githubLink && item.githubLink !== "no GitHub link found" && item.githubLink !== "Data missing")
+                    ? `<a href="${item.githubLink}" target="_blank" class="project-entry-github">GitHub: ${item.githubLink.split('/').slice(-2).join('/')}</a>`
+                    : `<span class="project-entry-github no-github-text">(GitHub: Not found)</span>`;
+                return `<li>
+                            <a href="${item.projectLink}" target="_blank" class="project-entry-devpost">Project: ${item.projectLink.substring(item.projectLink.lastIndexOf('/') + 1)}</a>
+                            ${ghLinkText}
+                        </li>`;
+            }).join('');
+
+            flaggedProjectsHtml = `
+                <details id="flagged-projects-details">
+                    <summary>${flaggedProjects.length} project(s) flagged (commits outside timeframe)</summary>
+                    <ul>${listItems}</ul>
+                </details>
+            `;
+        } else {
+            flaggedProjectsHtml = `<p><i class="fa-solid fa-check-circle" style="color: green;"></i> No projects flagged for commit timeframe violations.</p>`;
+        }
+
+        // dropdown menu for NA github links
+        let naGithubProjectsHtml = '';
+        if (naGithubProjects.length > 0) {
+            const listItems = naGithubProjects.map(item => {
+                const ghText = (item.githubLink === "no GitHub link found" || item.githubLink === "Data missing")
+                    ? `<span class="project-entry-github no-github-text">(No GitHub link found on Devpost project page)</span>`
+                    : `<span class="project-entry-github no-github-text">(GitHub status: ${item.githubLink})</span>`;
+
+                return `<li>
+                            <a href="${item.projectLink}" target="_blank" class="project-entry-devpost">Project: ${item.projectLink.substring(item.projectLink.lastIndexOf('/') + 1)}</a>
+                            ${ghText}
+                        </li>`;
+            }).join('');
+
+            naGithubProjectsHtml = `
+                <details id="na-github-projects-details">
+                    <summary>${naGithubProjects.length} project(s) where GitHub link was not found on Devpost</summary>
+                    <ul>${listItems}</ul>
+                </details>
+            `;
+        } else {
+            naGithubProjectsHtml = `<p><i class="fa-solid fa-check-circle" style="color: green;"></i> GitHub links were found for all applicable projects!</p>`;
+        }
+
+        // combine all details
+        detailInfoDiv.innerHTML = basicInfoHtml + flaggedProjectsHtml + naGithubProjectsHtml;
+    }    
+
+    // call our apis to get data
+    if (fetchDataButton) {
+        fetchDataButton.addEventListener('click', async function () { // Assuming handleFetchHackathonData logic is inlined or called
+            const button = this;
+
+            // error checking
+            if (!currentActiveHackathonLink) {
+                document.getElementById('fetch-process-status').innerHTML = `<p class="status-error">error: No active hackathon selected to fetch data for</p>`;
+                return;
+            }
+
+            // extracting data / loading message
+            button.disabled = true;
+            button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing...`;
+            const localFetchStatusDiv = document.getElementById('fetch-process-status');
+            localFetchStatusDiv.innerHTML = `<p class="status-info">Step 1/2: Scraping Devpost for project links...</p>`;
+
+            // scrape the hackathon's devpost link
+            try {
+                const scrapeResponse = await fetch('/scrape_devpost_link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ devpost_link: currentActiveHackathonLink })
+                });
+                const scrapeResult = await scrapeResponse.json();
+                if (!scrapeResponse.ok) throw new Error(scrapeResult.error || `scraping devpost failed (${scrapeResponse.status})`);
+
+                const projectsMsg = scrapeResult.message || (scrapeResult.project_links ? `Found ${scrapeResult.project_links.length} projects.` : "Projects fetched");
+                localFetchStatusDiv.innerHTML = `<p class="status-info">Step 1/2: ${projectsMsg}<br>Step 2/2: Fetching GitHub links...</p>`;
+
+                const githubResponse = await fetch('/get_all_github_links', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ devpost_link: currentActiveHackathonLink })
+                });
+                const githubResult = await githubResponse.json();
+                if (!githubResponse.ok) throw new Error(githubResult.error || `fetching GitHub links failed (${githubResponse.status})`);
+
+                const githubsMsg = Array.isArray(githubResult) ? `Found ${githubResult.length} GitHub links.` : "GitHub links processed";
+                localFetchStatusDiv.innerHTML = `<p class="status-success"><i class="fa-solid fa-check-circle"></i> Data fetch complete! ${githubsMsg} Refreshing details and verifying commits if needed...</p>`;
+
+            } catch (error) {
+                console.error('error during hackathon data fetch process:', error);
+                localFetchStatusDiv.innerHTML = `<p class="status-error"><i class="fa-solid fa-triangle-exclamation"></i> Fetch Error: ${error.message}</p>`;
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fa-solid fa-cloud-download"></i> Fetch Hackathon Data';
+                if (currentActiveHackathonLink) {
+                    displayHackathonDetails(detailHackathonName.textContent || "Selected Hackathon", currentActiveHackathonLink);
+                }
+            }
+        });
+    }
 
     // setup
     setActiveView(submitHackathonView);
