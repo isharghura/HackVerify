@@ -1,39 +1,16 @@
 {
+    "version": 2,
     "builds": [
         {
-            "src": "templates/index.html",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "templates/dashboard.html",
-            "use": "@vercel/static"
-        },
-        {
             "src": "app.py",
-            "use": "@vercel/python",
-            "config": {
-                "maxLambdaSize": "15mb",
-                "runtime": "python3.9"
-            }
-        },
-        {
-            "src": "api/scrape.py",
             "use": "@vercel/python"
         },
         {
-            "src": "api/test.py",
-            "use": "@vercel/python"
-        },
-        {
-            "src": "static/styles.css",
+            "src": "templates/*",
             "use": "@vercel/static"
         },
         {
-            "src": "static/dashboard.js",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "static/login.js",
+            "src": "static/*",
             "use": "@vercel/static"
         },
         {
@@ -43,48 +20,28 @@
     ],
     "routes": [
         {
-            "src": "/images/(.*)",
-            "dest": "/images/$1"
-        },
-        {
-            "src": "/api/submissions",
+            "src": "/api/.*",
             "dest": "app.py"
         },
         {
-            "src": "/api/test",
-            "dest": "/api/test.py"
-        },
-        {
-            "src": "/api/scrape",
-            "dest": "/api/scrape.py"
-        },
-        {
-            "src": "/templates/(.*)",
-            "dest": "/templates/$1"
-        },
-        {
-            "src": "/api/(.*)",
-            "dest": "/api/$1"
+            "src": "/dashboard",
+            "dest": "/templates/dashboard.html"
         },
         {
             "src": "/",
             "dest": "/templates/index.html"
         },
         {
-            "src": "/",
-            "dest": "/templates/dashboard.html"
-        },
-        {
             "src": "/static/(.*)",
             "dest": "/static/$1"
         },
         {
-            "src": "/(.*)",
-            "dest": "app.py"
+            "src": "/images/(.*)",
+            "dest": "/images/$1"
         },
         {
-            "src": "/favicon.ico",
-            "dest": "/images/favicon.ico"
+            "src": "/(.*)",
+            "dest": "app.py"
         }
     ]
 }
