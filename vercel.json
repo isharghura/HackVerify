@@ -1,62 +1,36 @@
 {
+    "version": 2,
     "builds": [
         {
-            "src": "templates/index.html",
-            "use": "@vercel/static"
+            "src": "run.py",
+            "use": "@vercel/python",
+            "config": {
+                "maxLambdaSize": "15mb",
+                "runtime": "python3.9"
+            }
         },
         {
-            "src": "templates/dashboard.html",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "app.py",
-            "use": "@vercel/python"
-        },
-        {
-            "src": "static/styles.css",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "static/dashboard.js",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "static/login.js",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "images/*",
+            "src": "app/static/**",
             "use": "@vercel/static"
         }
     ],
     "routes": [
         {
-            "src": "/images/(.*)",
-            "dest": "/images/$1"
-        },
-        {
-            "src": "/templates/(.*)",
-            "dest": "/templates/$1"
-        },
-        {
-            "src": "/",
-            "dest": "/templates/index.html"
-        },
-        {
-            "src": "/",
-            "dest": "/templates/dashboard.html"
-        },
-        {
             "src": "/static/(.*)",
-            "dest": "/static/$1"
+            "dest": "/app/static/$1"
         },
         {
             "src": "/(.*)",
-            "dest": "app.py"
-        },
-        {
-            "src": "/favicon.ico",
-            "dest": "/images/favicon.ico"
+            "dest": "run.py",
+            "methods": [
+                "GET",
+                "POST"
+            ]
         }
-    ]
+    ],
+    "env": {
+        "FLASK_APP": "run.py",
+        "FLASK_ENV": "production",
+        "PYTHONPATH": "/app"
+    }
 }
