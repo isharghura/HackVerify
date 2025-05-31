@@ -1,361 +1,36 @@
+from datetime import datetime, timezone
+import os
 import re
+import time
+from urllib.parse import urlparse, urlunparse
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from flask import (
-    Flask,
+    Blueprint,
     json,
     jsonify,
-    redirect,
     request,
-    send_from_directory,
-    render_template,
-    session,
 )
-import os
 import requests
-from supabase import create_client, Client
-from dotenv import load_dotenv
-from datetime import datetime, timedelta, timezone
-from urllib.parse import urlparse, urljoin, urlunparse
-import time
+from supabase import create_client
+
+bp = Blueprint("scraper", __name__)
 
 load_dotenv(".env.local")
-
-app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY") or os.urandom(24)
 
 # supabase client
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# linkedin oauth
-LINKEDIN_CLIENT_ID = os.getenv("LINKEDIN_CLIENT_ID")
-LINKEDIN_CLIENT_SECRET = os.getenv("LINKEDIN_CLIENT_SECRET")
-LINKEDIN_REDIRECT_URI = os.getenv("LINKEDIN_REDIRECT_URI")
-
 # github api token
 GITHUB_API_TOKEN = os.getenv("GITHUB_API_TOKEN")
 
-
-# server static files
-@app.route("/static/<path:filename>")
-def static_files(filename):
-    return send_from_directory("static", filename)
-
-
-# serve index.htm
-@app.route("/")
-def index():
-    return send_from_directory("templates", "index.html")
-
-
-# linkedin oauth routes
-@app.route("/auth/linkedin")
-def linkedin_auth():
-    auth_url = (
-        f"https://www.linkedin.com/oauth/v2/authorization?"
-        f"response_type=code&"
-        f"client_id={LINKEDIN_CLIENT_ID}&"
-        f"redirect_uri={LINKEDIN_REDIRECT_URI}&"
-        f"scope=openid%20profile%20email&"
-        f"state=anti_csrf_token"
-    )
-    return redirect(auth_url)
-
-
-@app.route("/auth/linkedin/callback")
-def linkedin_callback():
-    try:
-        code = request.args.get("code")
-        if not code:
-            return "missing auth code", 400
-
-        token_response = requests.post(
-            "https://www.linkedin.com/oauth/v2/accessToken",
-            data={
-                "grant_type": "authorization_code",
-                "code": code,
-                "redirect_uri": LINKEDIN_REDIRECT_URI,
-                "client_id": LINKEDIN_CLIENT_ID,
-                "client_secret": LINKEDIN_CLIENT_SECRET,
-            },
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
-        )
-
-        token_data = token_response.json()
-        if "error" in token_data:
-            app.logger.error(f"token error: {token_data}")
-            return f"LinkedIn token error: {token_data.get('error_description')}", 400
-
-        access_token = token_data["access_token"]
-
-        if "error" in token_data:
-            return f"LinkedIn token error: {token_data['error_description']}", 400
-
-        profile_response = requests.get(
-            "https://api.linkedin.com/v2/userinfo",
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "X-Restli-Protocol-Version": "2.0.0",
-            },
-        )
-        profile_data = profile_response.json()
-
-        if "error" in profile_data:
-            app.logger.error(f"profile error: {profile_data}")
-            return f"LinkedIn API error: {profile_data['message']}", 400
-
-        user_data = {
-            "email": profile_data.get("email", ""),
-            "linkedin_id": profile_data["sub"],
-            "full_name": profile_data.get("name", ""),
-            "access_token": access_token,
-            "picture": profile_data.get("picture"),
-        }
-
-        response = (
-            supabase.table("users")
-            .upsert(
-                user_data,
-                on_conflict="linkedin_id",  # update if linkedin_id exists
-            )
-            .execute()
-        )
-
-        # set up a session
-        session.clear()
-        session["linkedin_id"] = profile_data.get("sub")
-        session["access_token"] = access_token
-        session.permanent = True
-
-        return redirect("/dashboard")
-
-    except Exception as e:
-        print("callback error:", str(e))
-        return "Authentication failed", 500
-
-
-# dashboard route
-@app.route("/dashboard")
-def dashboard():
-    if "linkedin_id" not in session:
-        return redirect("/auth/linkedin")
-    try:
-        response = (
-            supabase.table("users")
-            .select("*")
-            .eq("linkedin_id", session["linkedin_id"])
-            .execute()
-        )
-
-        if not response.data:
-            return redirect("/auth/linkedin")
-
-        return render_template("dashboard.html", user=response.data[0])
-
-    except Exception as e:
-        app.logger.error(f"dashboard error: {str(e)}")
-        return redirect("/")
-
-
-@app.route("/check-auth")
-def check_auth():
-    try:
-        # is user in a session
-        if "linkedin_id" not in session:
-            return redirect("/auth/linkedin")
-
-        # retrieve user
-        user_data = (
-            supabase.table("users")
-            .select("*")
-            .eq("linkedin_id", session["linkedin_id"])
-            .execute()
-            .data
-        )
-
-        if not user_data:
-            return {"status": "unauthenticated"}, 401
-
-        user = user_data[0]
-
-        # does token need refreshing?
-        if datetime.now() > datetime.fromisoformat(user["expires_at"]) - timedelta(
-            minutes=5
-        ):
-            try:
-                token_response = requests.post(
-                    "https://www.linkedin.com/oauth/v2/accessToken",
-                    data={
-                        "grant_type": "refresh_token",
-                        "refresh_token": user["refresh_token"],
-                        "client_id": LINKEDIN_CLIENT_ID,
-                        "client_secret": LINKEDIN_CLIENT_SECRET,
-                    },
-                    headers={"Content-Type": "application/x-www-form-urlencoded"},
-                )
-                token_data = token_response.json()
-
-                if "error" in token_data:
-                    return {"status": "token_refresh_failed"}, 401
-
-                # update user tokens in db
-                supabase.table("users").update(
-                    {
-                        "access_token": token_data["access_token"],
-                    }
-                ).eq("linkedin_id", session["linkedin_id"]).execute()
-
-                # update session with new token
-                session["access_token"] = token_data["access_token"]
-
-            except Exception as e:
-                pass
-
-        return {
-            "status": "authenticated",
-            "user": {
-                "email": user["email"],
-                "name": user["full_name"],
-                "linkedin_id": user["linkedin_id"],
-            },
-        }, 200
-
-    except Exception as e:
-        app.logger.error(f"auth check failed: {str(e)}")
-        return {"status": "error", "message": str(e)}, 500
-
-
-# handle form submissions
-@app.route("/api/submissions", methods=["POST"])
-def submissions():
-    # is user logged in?
-    if "linkedin_id" not in session:
-        refresh_response = check_auth()
-        if refresh_response.status_code != 200:
-            return redirect("/auth/linkedin")
-
-    client_id = session.get("linkedin_id")
-    current_time = datetime.now(timezone.utc)
-
-    # get last request
-    rate_check = (
-        supabase.table("rate_limits")
-        .select("created_at")
-        .eq("client_id", client_id)
-        .eq("endpoint", "submissions")
-        .order("created_at", desc=True)
-        .limit(1)
-        .execute()
-    )
-
-    # was there actually a request made before?
-    if rate_check.data and len(rate_check.data) > 0:
-        last_request_time = datetime.fromisoformat(
-            rate_check.data[0]["created_at"]
-        ).replace(tzinfo=timezone.utc)
-        if current_time - last_request_time < timedelta(minutes=5):
-            return (
-                jsonify(
-                    {
-                        "error": "rate limit exceeded",
-                        "message": "only 1 submission allowed every 5 minutes",
-                    }
-                ),
-                429,
-            )
-
-    # update submission time
-    supabase.table("rate_limits").upsert(
-        {
-            "client_id": client_id,
-            "endpoint": "submissions",
-            "created_at": current_time.isoformat(),
-        },
-        on_conflict="client_id,endpoint",
-    ).execute()
-
-    try:
-        # is it json?
-        if not request.is_json:
-            return jsonify({"error": "request must be JSON"}), 400
-
-        data = request.get_json()
-        if "devpost" not in data:
-            return jsonify({"error": "devpost link is required"}), 400
-        if "website" not in data:
-            return jsonify({"error": "hackathon website link is required"}), 400
-
-        user_response = (
-            supabase.table("users")
-            .select("*")
-            .eq("linkedin_id", session["linkedin_id"])
-            .execute()
-        )
-
-        if not user_response.data:
-            return jsonify({"error": "user not found"}), 404
-
-        user = user_response.data[0]
-
-        existing_submission = (
-            supabase.table("interested_organizers")
-            .select("*")
-            .eq("linkedin_id", user["linkedin_id"])
-            .eq("devpost", data["devpost"])
-            .execute()
-        )
-
-        submission_data = {
-            "devpost": data["devpost"],
-            "website": data["website"],
-            "email": user["email"],
-            "linkedin_id": user["linkedin_id"],
-            "name": user.get("full_name", ""),
-        }
-
-        if existing_submission.data and len(existing_submission.data) > 0:
-            existing_id = existing_submission.data[0]["id"]
-            response = (
-                supabase.table("interested_organizers")
-                .update(submission_data)
-                .eq("id", existing_id)
-                .execute()
-            )
-        else:
-            submission_data["created_at"] = current_time.isoformat()
-            response = (
-                supabase.table("interested_organizers")
-                .insert(submission_data)
-                .execute()
-            )
-
-        # was insertion successful?
-        if hasattr(response, "error") and response.error:
-            app.logger.error(f"Supabase error: {response.error}")
-            return (
-                jsonify({"error": "Database error", "details": str(response.error)}),
-                500,
-            )
-
-        return jsonify({"message": "submission successful!"}), 200
-
-    except Exception as e:
-        app.logger.error(f"submission error: {str(e)}", exc_info=True)
-        return jsonify({"error": "internal server error", "details": str(e)}), 500
-
-
-@app.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return jsonify({"message": "Logged out"}), 200
-
-
 # web scraper to find all projects from devpost link
-@app.route("/scrape_devpost_link", methods=["POST"])
+@bp.route("/scrape_devpost_link", methods=["POST"])
 def scrape_devpost_link_route():
     data = request.get_json()
-    devpost_link = data.get('devpost_link')
+    devpost_link = data.get("devpost_link")
     if not devpost_link:
         return jsonify({"error": "devpost_link is required"}), 400
 
@@ -387,9 +62,9 @@ def scrape_devpost_link_route():
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
 
-        submissions_row = soup.find('td', string='Submissions').find_parent('tr')
+        submissions_row = soup.find("td", string="Submissions").find_parent("tr")
 
-        date_tags = submissions_row.find_all('td', attrs={"data-iso-date": True})
+        date_tags = submissions_row.find_all("td", attrs={"data-iso-date": True})
 
         for tag in date_tags:
             iso_date = tag["data-iso-date"]
@@ -463,7 +138,7 @@ def get_github_link(project_link):
         return "no GitHub link found"
 
 
-@app.route("/get_all_github_links", methods=["POST"])
+@bp.route("/get_all_github_links", methods=["POST"])
 def get_all_github_links_route():
     data = request.get_json()
     devpost_link = data.get("devpost_link")
@@ -532,10 +207,11 @@ def get_all_github_links_route():
         print(f"database error: {str(e)}")
         return None
 
+
 # in case we're not given base github link
 def sanitize_github_url(github_link):
     parsed = urlparse(github_link)
-    path_parts = parsed.path.strip('/').split('/')
+    path_parts = parsed.path.strip("/").split("/")
 
     # username/github proj name
     if len(path_parts) >= 2:
@@ -549,7 +225,7 @@ def get_first_last_commit(github_link):
     owner, repo = None, None
     try:
         if not github_link:
-            result = {'error': "not a valid github link"}
+            result = {"error": "not a valid github link"}
             return result
         parsed_url = urlparse(github_link)
         path_parts = parsed_url.path.strip("/").split("/")
@@ -586,9 +262,7 @@ def get_first_last_commit(github_link):
 
         commits_on_current_page = first_commit_page_response.json()
         if not commits_on_current_page:
-            result = {
-                "error": f"no commits found for {github_link}"
-            }
+            result = {"error": f"no commits found for {github_link}"}
             end_time = time.time()
             return result
 
@@ -645,22 +319,20 @@ def get_first_last_commit(github_link):
     except requests.exceptions.RequestException as req_err:
         result = {"error": f"req error occurred: {req_err}"}
     except KeyError as key_err:
-        result = {
-            "error": f"unexpected struc, couldn't parse it: {key_err}"
-        }
+        result = {"error": f"unexpected struc, couldn't parse it: {key_err}"}
     except Exception as e:
         result = {"error": f"unknwon error: {e}"}
     return result
 
 
-@app.route("/validate_commits", methods=['POST'])
+@bp.route("/validate_commits", methods=["POST"])
 def check_and_store_commit_validity():
     data = request.get_json()
     if not data or "devpost_link_to_check" not in data:
         return jsonify({"error": "Missing 'devpost_link_to_check' in JSON body"}), 400
 
     devpost_link_to_check = data["devpost_link_to_check"]
-    
+
     try:
         # fetch hackathon's data from supabase
         response = (
@@ -752,12 +424,8 @@ def check_and_store_commit_validity():
             hackathon_start_dt_utc = hackathon_start_dt_local.astimezone(timezone.utc)
             hackathon_end_dt_utc = hackathon_end_dt_local.astimezone(timezone.utc)
 
-            print(
-                f"hackathon start: {hackathon_start_dt_utc} (UTC)"
-            )
-            print(
-                f"hackathon end: {hackathon_end_dt_utc} (UTC)"
-            )
+            print(f"hackathon start: {hackathon_start_dt_utc} (UTC)")
+            print(f"hackathon end: {hackathon_end_dt_utc} (UTC)")
 
         except ValueError as ve:
             return {"error": f"invalid hackathon date format or conversion issue: {ve}"}
@@ -811,7 +479,7 @@ def check_and_store_commit_validity():
                 )
 
                 commit_validity_status.append(is_valid)
-                
+
                 # testing
                 if is_valid:
                     print(
@@ -836,7 +504,7 @@ def check_and_store_commit_validity():
             {"commit_validity_status": commit_validity_status}
         ).eq("devpost_link", devpost_link_to_check).execute()
 
-        print("commit_validity_status column updated to:"+ str(commit_validity_status))
+        print("commit_validity_status column updated to:" + str(commit_validity_status))
         return {
             "devpost_link": devpost_link_to_check,
             "commit_validity_status": commit_validity_status,
@@ -847,162 +515,3 @@ def check_and_store_commit_validity():
             f"error in check_and_store_commit_validity for {devpost_link_to_check}: {e}"
         )
         return {"error": f"error occurred: {str(e)}"}
-
-
-@app.route("/api/user-hackathons/<linkedin_id>")
-def get_user_hackathons(linkedin_id):
-    try:
-        if not linkedin_id:
-            return jsonify({'error': 'Invalid user ID'}), 400
-
-        response = (
-            supabase.table("devpost_hackathons")
-            .select("linkedin_id, devpost_link, created_at")
-            .eq("linkedin_id", linkedin_id)
-            .execute()
-        )
-
-        if not response.data:
-            return jsonify([])
-
-        # cleaning up
-        hackathons = []
-        for item in response.data:
-            try:
-                url = item["devpost_link"]
-                name = (
-                    url.replace("https://", "")
-                    .replace("http://", "")
-                    .split(".devpost.com")[0]
-                )
-
-                hackathons.append(
-                    {
-                        "linkedin_id": item["linkedin_id"],
-                        "devpost_link": url,
-                        "name": name,
-                        "created_at": item["created_at"],
-                    }
-                )
-            except KeyError as e:
-                print(f"missing key in hackathon data: {e}")
-                continue
-
-        return jsonify(hackathons)
-
-    except Exception as e:
-        print(f"Error fetching hackathons: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/hackathon-details", methods=["GET"])
-def get_hackathon_details_route():
-    actual_devpost_link = request.args.get("link")
-
-    if not actual_devpost_link:
-        return jsonify({"error": "devpost link parameter 'link' is required"}), 400
-
-    try:
-        response = (
-            supabase.table("devpost_hackathons")
-            .select("project_links, github_links, last_scraped_at, datesandtimes, commit_validity_status")
-            .eq("devpost_link", actual_devpost_link)
-            .maybe_single()
-            .execute()
-        )
-
-        if not response.data:
-            return (
-                jsonify(
-                    {
-                        "message": "no data found for this hackathon yet",
-                        "data_exists": False,
-                        "devpost_link": actual_devpost_link,
-                    }
-                ),
-                200,
-            )
-
-        db_data = response.data
-
-        def parse_json_array_field(field_data):
-            parsed_list = []
-            if isinstance(field_data, str) and field_data.strip():
-                try:
-                    parsed_list = json.loads(field_data)
-                    if not isinstance(parsed_list, list):
-                        parsed_list = []
-                except json.JSONDecodeError:
-                    parsed_list = []
-            elif isinstance(field_data, list):
-                parsed_list = field_data
-            return parsed_list
-
-        project_links_list = parse_json_array_field(db_data.get("project_links"))
-        github_links_list = parse_json_array_field(db_data.get("github_links"))
-        commit_status_list = parse_json_array_field(db_data.get("commit_validity_status"))
-
-        dates_array_for_display = None
-        raw_dates = db_data.get("datesandtimes")
-        if isinstance(raw_dates, str) and raw_dates.strip():
-            try:
-                parsed_dates = json.loads(raw_dates)
-                if isinstance(parsed_dates, list) and len(parsed_dates) == 2:
-                    dates_array_for_display = parsed_dates
-            except json.JSONDecodeError:
-                print(f"warning: could not decode datesandtimes JSON for {actual_devpost_link}")
-        elif isinstance(raw_dates, list) and len(raw_dates) == 2:
-            dates_array_for_display = raw_dates
-
-        return (
-            jsonify(
-                {
-                    "data_exists": True,
-                    "devpost_link": actual_devpost_link,
-                    "project_count": len(project_links_list),
-                    "last_scraped_at": db_data.get("last_scraped_at"),
-                    "datesandtimes": dates_array_for_display,
-                    "project_links": project_links_list,
-                    "github_links": github_links_list,
-                    "commit_validity_status": commit_status_list,
-                }
-            ),
-            200,
-        )
-
-    except Exception as e:
-        import traceback
-        print(f"error fetching hackathon details for {actual_devpost_link}: {str(e)}\n{traceback.format_exc()}")
-        return (
-            jsonify(
-                {"error": f"server error fetching details.", "data_exists": False}),
-                500,
-                )
-
-
-def lambda_handler(event):
-    from werkzeug.wrappers import Request
-    from werkzeug.wsgi import responder
-    from werkzeug.exceptions import HTTPException
-
-    @responder
-    def application(environ, start_response):
-        try:
-            return app(environ, start_response)
-        except HTTPException as e:
-            return e
-
-    return Request(event).get_response(application)
-
-
-# run flask app
-if __name__ == "__main__":
-    app.run(port=8000)
-    # app.run()
-
-else:
-
-    def create_app():
-        return app
-
-    api = create_app()

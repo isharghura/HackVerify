@@ -18,13 +18,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const cleanedDevpostLink = cleanDevpostLink(devpostInput.value);
 
             try {
-                const response = await fetch("/api/submissions", {
+                const response = await fetch("/submissions", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        devpost: cleanDevpostLink,
+                        devpost: cleanedDevpostLink,
                         website: document.getElementById("website").value
                     }),
                     credentials: "include"
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         hackathonsListDiv.innerHTML = `<div class="loading-hackathons"><i class="fa-solid fa-spinner fa-spin"></i> Loading your hackathons...</div>`;
 
-        fetch(`/api/user-hackathons/${linkedinId}`)
+        fetch(`/user-hackathons/${linkedinId}`)
             .then(response => {
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 return response.json();
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             // see if backend already has hackathon's data
-            const initialDetailsResponse = await fetch(`/api/hackathon-details?link=${encodeURIComponent(cleanedDevpostLink)}`);
+            const initialDetailsResponse = await fetch(`/hackathon-details?link=${encodeURIComponent(cleanedDevpostLink)}`);
             if (!initialDetailsResponse.ok) {
                 const errorData = await initialDetailsResponse.json().catch(() => ({ error: "failed to parse error response" }));
                 throw new Error(`failed to fetch initial details (${initialDetailsResponse.status}): ${errorData.error || initialDetailsResponse.statusText}`);
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // do we need to validate data or can we just pull from our database without doing any checks
             if (projectLinks.length > 0 && commitStatus.length === 0 || projectLinks.length > commitStatus.length) {
                 let verificationReason = commitStatus.length === 0
-                    ? "Commit not yet verified."
+                    ? "Commits not yet verified."
                     : `New projects detected, re-validating.`;
 
                 fetchStatusDiv.innerHTML = `<p class="status-info"><i class="fa-solid fa-gears fa-spin"></i> ${verificationReason} Validating now...</p>`;
