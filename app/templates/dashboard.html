@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>HackVerify</title>
+    <title>Submit Hackathon - HackVerify</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../static/styles.css">
     <link rel="icon" type="image/x-icon" href="../static/images/favicon.ico">
@@ -14,7 +14,8 @@
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>hackverify</h2>
+            <img src="../static/images/logo-icon.png" alt="HackVerify" class="sidebar-logo">
+            <h2>HackVerify</h2>
         </div>
 
         <div class="sidebar-tab active" id="submit-hackathon-tab">
@@ -33,31 +34,110 @@
 
     <div class="main-content">
         <div id="submit-hackathon-view" class="view-container">
-            <div class="container">
-                <header>
-                    <h1>Welcome, {{ user.full_name or user.email }}!</h1>
-                </header>
-                <div class="dashboard-content">
-                    <div class="spacer"></div>
-                    <div class="form-container">
-                        <form id="verificationForm" class="main-form">
+            <div class="dashboard-container">
+                <div class="dashboard-header">
+                    <div class="user-greeting">
+                        <h1>Welcome back, <span class="highlight">{{ user.full_name or user.email }}</span></h1>
+                        <p>Submit a new hackathon for verification</p>
+                    </div>
+                    <div class="verification-steps">
+                        <div class="step active">
+                            <div class="step-number">1</div>
+                            <div class="step-text">Submit Details</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-text">Verification</div>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-text">Get Started</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-container">
+                    <form id="verificationForm" class="main-form">
+                        <div class="form-card">
+                            <h2 class="form-title">
+                                <i class="fas fa-trophy"></i> Hackathon Information
+                            </h2>
+
                             <div class="form-group">
-                                <label for="devpost">Devpost Link</label>
-                                <input type="url" id="devpost" placeholder="ex: https://cuhacking6.devpost.com"
-                                    required>
-                                <label for="website">Hackathon's Website</label>
-                                <input type="url" id="website" placeholder="ex: https://cuhacking.ca" required>
+                                <label for="devpost">
+                                    <i class="fas fa-link"></i> Devpost Link
+                                </label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-globe input-icon"></i>
+                                    <input type="url" id="devpost" placeholder="https://cuhacking6.devpost.com"
+                                        required>
+                                </div>
                             </div>
-                            <button type="submit" class="submit-btn">Submit for Verification</button>
-                        </form>
-                        <div class="reminder-box">
-                            <h3>Verification Process:</h3>
-                            <p><i class="fas fa-info-circle"></i> We need to verify you're a hackathon organizer</p>
-                            <p><i class="fas fa-envelope"></i> You'll receive an email with verification results</p>
-                            <p><i class="fas fa-check-circle"></i> Once verified, you can start cheat checking!</p>
-                            <h4>To make verfication smooth:</h4>
-                            <p>1. Your name's listed on the hackathon website</p>
-                            <p>2. Hackathon has good social media presence</p>
+
+                            <div class="form-group">
+                                <label for="website">
+                                    <i class="fas fa-laptop"></i> Hackathon Website
+                                </label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-globe input-icon"></i>
+                                    <input type="url" id="website" placeholder="https://cuhacking.ca" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-paper-plane"></i> Submit for Verification
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="info-card">
+                        <div class="card-header">
+                            <i class="fas fa-info-circle"></i>
+                            <h3>Verification Process</h3>
+                        </div>
+
+                        <div class="process-item">
+                            <div class="process-icon success">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div class="process-content">
+                                <h4>Identity Verification</h4>
+                                <p>We verify you're an official hackathon organizer</p>
+                            </div>
+                        </div>
+
+                        <div class="process-item">
+                            <div class="process-icon warning">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="process-content">
+                                <h4>Email Confirmation</h4>
+                                <p>You'll receive verification results via email</p>
+                            </div>
+                        </div>
+
+                        <div class="process-item">
+                            <div class="process-icon primary">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="process-content">
+                                <h4>Start Analyzing</h4>
+                                <p>Once verified, you can begin project verification</p>
+                            </div>
+                        </div>
+
+                        <div class="verification-tips">
+                            <h4><i class="fas fa-lightbulb"></i> Tips for Smooth Verification</h4>
+                            <ul class="tips-list">
+                                <li>
+                                    <i class="fas fa-check-circle"></i>
+                                    Ensure your name is listed on the hackathon website
+                                </li>
+                                <li>
+                                    <i class="fas fa-check-circle"></i>
+                                    Hackathon should have active social media presence
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
