@@ -22,10 +22,22 @@ def static_files(filename):
     return send_from_directory("static", filename)
 
 
-# serve index.htm
+# serve index.html
 @bp.route("/")
 def index():
     return send_from_directory("templates", "index.html")
+
+
+# serve privacy policy and terms of service.html
+@bp.route("/privacy-policy")
+def privacy_policy():
+    return send_from_directory("templates", "privacy-policy.html")
+
+
+@bp.route("/terms-of-service")
+def terms_of_service():
+    return send_from_directory("templates", "terms-of-service.html")
+
 
 # dashboard route
 @bp.route("/dashboard")

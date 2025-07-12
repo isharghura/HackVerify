@@ -14,28 +14,124 @@
     <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>hackverify</h1>
-            <p>Automating hackathon cheat checks</p>
-            <img src="../static/images/logo.png" alt="HackVerify logo" class="logo">
-        </header>
-        <main>
-            <div class="login-container">
-                <a href="/auth/linkedin" class="linkedin-login-btn">
-                    <i class="fab fa-linkedin"></i>
-                    Continue with LinkedIn
-                </a>
-
-                <div class="explanation">
-                    <p>After signing in, you'll be able to submit your hackathon's details for verification.</p>
+    <nav class="navbar">
+        <a href="/" class="nav-brand">HackVerify</a>
+        <ul class="nav-links">
+            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#faq">FAQ</a></li>
+        </ul>
+        <a href="/auth/linkedin" class="linkedin-login-btn nav-login-btn">
+            <i class="fab fa-linkedin"></i>
+            Sign In
+        </a>
+    </nav>
+    
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="logo-container">
+                <img src="../static/images/logo.png" alt="HackVerify logo" class="logo">
+                <div class="logo-pulse"></div>
+            </div>
+            <h1 class="hero-title">Automated Hackathon <span class="highlight">Verification</span></h1>
+            <p class="hero-subtitle">Ensure fair play with our powerful project analysis tool</p>
+    
+            <div class="stats-card">
+                <div class="stats-header">
+                    <h3>Easy to use, get answers <span class="highlight-red">ASAP</span></h3>
+                </div>
+                <div class="stats-body">
+                    <div class="stat-item">
+                        <div class="stat-value">231</div>
+                        <div class="stat-label">Total Projects Processed</div>
+                    </div>
+                    <div class="stat-item flagged">
+                        <div class="stat-value">73</div>
+                        <div class="stat-label">Flagged Projects</div>
+                    </div>
+                    <div class="stat-item warning">
+                        <div class="stat-value">27</div>
+                        <div class="stat-label">Missing GitHub Links</div>
+                    </div>
                 </div>
             </div>
-        </main>
+    
+            <a href="/auth/linkedin" class="cta-button">
+                <i class="fab fa-linkedin"></i>
+                Verify Your Hackathon Now
+            </a>
+        </div>
     </div>
-    <div class="copyright">
-        <footer>© 2025 HackVerify. Developed by Ishar Ghura.</footer>
-    </div>
+
+    <section id="how-it-works" class="section">
+        <h2>How It Works</h2>
+        <p>A simple, streamlined process to ensure fair play at your event.</p>
+        <div class="feature">
+            <h3>1. Submit Your Hackathon Details</h3>
+            <p>Provide us with essential information about your event, including project submission data from platforms
+                like Devpost.</p>
+        </div>
+        <div class="feature">
+            <h3>2. Automated Analysis</h3>
+            <p>Our system analyzes project descriptions, code repositories, and other metadata to identify potential
+                instances of prior work or other violations of hackathon rules.</p>
+        </div>
+        <div class="feature">
+            <h3>3. Receive an Insights Report</h3>
+            <p>You'll get a clear and concise report highlighting projects that may require a second look from your
+                judging panel. This report serves as an aid, not a final verdict.</p>
+        </div>
+    </section>
+
+    <section id="features" class="section">
+        <h2>Features</h2>
+        <div class="feature">
+            <h3><i class="fas fa-cogs"></i> Automated Project Scanning</h3>
+            <p>Leverages algorithms to check for similarities between project submissions and existing online code, past
+                hackathons, and more.</p>
+        </div>
+        <div class="feature">
+            <h3><i class="fas fa-file-alt"></i> Detailed Reporting</h3>
+            <p>Provides easy-to-understand reports that flag potential issues, allowing your team to focus its efforts
+                on manual reviews where they are needed most.</p>
+        </div>
+        <div class="feature">
+            <h3><i class="fas fa-lock"></i> Secure and Confidential</h3>
+            <p>Your hackathon's data is handled with care. We use secure authentication and do not share your event's
+                sensitive information.</p>
+        </div>
+    </section>
+
+    <section id="faq" class="section">
+        <h2>Frequently Asked Questions</h2>
+        <div class="faq-item">
+            <h3>Is HackVerify 100% accurate?</h3>
+            <p>No. HackVerify is an assistive tool designed to automate the initial stages of cheat detection. The data
+                and reports generated should be taken with a grain of salt. False positives and false negatives can
+                occur. It is not a substitute for human judgment.</p>
+        </div>
+        <div class="faq-item">
+            <h3>What do I do with the results?</h3>
+            <p>The report should be used as a starting point for your own investigation. We provide insights, but the
+                final decision to disqualify a team rests solely with the hackathon organizers.</p>
+        </div>
+        <div class="faq-item">
+            <h3>What platforms do you support?</h3>
+            <p>Currently, our primary integration is with Devpost. We are working on expanding our support for other
+                hackathon platforms.</p>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="/privacy-policy">Privacy Policy</a>
+            <a href="/terms-of-service">Terms of Service</a>
+        </div>
+        <div class="copyright">
+            <p>© 2025 HackVerify. Developed by Ishar Ghura.</p>
+        </div>
+    </footer>
+
     <script src="/static/login.js"></script>
 </body>
 </html>

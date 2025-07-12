@@ -51,7 +51,7 @@ def linkedin_callback():
             },
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
-
+    
         token_data = token_response.json()
         if "error" in token_data:
             current_app.logger.error(f"token error: {token_data}")

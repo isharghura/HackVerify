@@ -207,14 +207,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const displayDevpostName = devpostLink.replace(/^(https?:\/\/)?(www\.)?/, '').split('/')[0];
         detailDevpostLink.textContent = displayDevpostName ? displayDevpostName : "View on Devpost";
 
-        const detailInfoDiv = document.getElementById('hackathon-detail-info');
+        // show loading state
+        document.getElementById('missing-github-projects-container').innerHTML = `
+        <div class="loading-details"><i class="fa-solid fa-spinner fa-spin"></i> Loading project details...</div>
+    `;
+        document.getElementById('flagged-projects-container').innerHTML = `
+        <div class="loading-details"><i class="fa-solid fa-spinner fa-spin"></i> Loading project details...</div>
+    `;
+        document.getElementById('data-status-container').innerHTML = `
+        <div class="loading-details"><i class="fa-solid fa-spinner fa-spin"></i> Loading data status...</div>
+    `;
+
         const fetchStatusDiv = document.getElementById('fetch-process-status');
         const fetchDataButton = document.getElementById('fetch-data-button');
-
-        // spinning wheel
-        detailInfoDiv.innerHTML = `<div class="loading-details"><i class="fa-solid fa-spinner fa-spin"></i> Loading hackathon details...</div>`;
-        fetchStatusDiv.innerHTML = '';
-        if (fetchDataButton) fetchDataButton.disabled = true;
 
         try {
             // see if backend already has hackathon's data
@@ -233,20 +238,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 project_links: projectLinks,
                 github_links: githubLinks,
                 commit_validity_status: commitStatus,
-            } = initialData
+            } = initialData;
 
             projectLinks = projectLinks || [];
             githubLinks = githubLinks || [];
             commitStatus = commitStatus || [];
 
-            // do we need to validate data or can we just pull from our database without doing any checks
-            if (projectLinks.length > 0 && commitStatus.length === 0 || projectLinks.length > commitStatus.length) {
+            // check if we need to validate commits
+            if (projectLinks.length > 0 && (commitStatus.length === 0 || projectLinks.length > commitStatus.length)) {
                 let verificationReason = commitStatus.length === 0
                     ? "Commits not yet verified."
                     : `New projects detected, re-validating.`;
 
                 fetchStatusDiv.innerHTML = `<p class="status-info"><i class="fa-solid fa-gears fa-spin"></i> ${verificationReason} Validating now...</p>`;
-                detailInfoDiv.innerHTML = `<p class="status-info"><i class="fa-solid fa-gears fa-spin"></i> Please wait, running commit validation for ${projectLinks.length} projects, this might take a while...</p>`;
 
                 try {
                     const validateResponse = await fetch('/validate_commits', {
@@ -260,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         throw new Error(validationResult.error || `commit verification call failed (${validateResponse.status})`);
                     }
 
-                    // verified, now we can update commit status
+                    // update with validated data
                     commitStatus = validationResult.commit_validity_status || [];
                     initialData.commit_validity_status = commitStatus;
                     fetchStatusDiv.innerHTML = `<p class="status-success"><i class="fa-solid fa-check-circle"></i> Commit verification complete!</p>`;
@@ -274,8 +278,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetchStatusDiv.innerHTML = `<p class="status-info">Project details and commits loaded</p>`;
             }
 
-            // update ui
-            updateDetailInfo({
+            // update the UI with the final data
+            updateHackathonDetails({
                 data_exists: initialData.data_exists,
                 last_scraped_at: initialData.last_scraped_at,
                 datesandtimes: initialData.datesandtimes,
@@ -285,114 +289,154 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
         } catch (error) {
-            console.error("error in displayHackathonDetails:", error);
-            detailInfoDiv.innerHTML = `<p class="error-message"><i class="fa-solid fa-triangle-exclamation"></i> Error loading details: ${error.message}</p>`;
-            fetchStatusDiv.innerHTML = `<p class="status-error"><i class="fa-solid fa-triangle-exclamation"></i> Failed to display hackathon details: ${error.message}</p>`;
+            console.error("Error loading hackathon details:", error);
+            document.getElementById('missing-github-projects-container').innerHTML = `
+            <div class="status-error"><i class="fa-solid fa-triangle-exclamation"></i> Error loading projects: ${error.message}</div>
+        `;
+            document.getElementById('flagged-projects-container').innerHTML = `
+            <div class="status-error"><i class="fa-solid fa-triangle-exclamation"></i> Error loading projects: ${error.message}</div>
+        `;
+            document.getElementById('data-status-container').innerHTML = `
+            <div class="status-error"><i class="fa-solid fa-triangle-exclamation"></i> Error loading data status: ${error.message}</div>
+        `;
         } finally {
             if (fetchDataButton) fetchDataButton.disabled = false;
         }
     }
+
     
     // update the info that is currently known about the hackathon
-    function updateDetailInfo(data) {
-        const detailInfoDiv = document.getElementById('hackathon-detail-info');
-        if (!detailInfoDiv) {
-            console.error("detailInfoDiv not found!");
-            return;
+    function updateHackathonDetails(data) {
+        // update basic info
+        document.getElementById('last-fetched-time').textContent =
+            data.last_scraped_at ? new Date(data.last_scraped_at).toLocaleString() : 'Never';
+
+        if (data.datesandtimes && data.datesandtimes.length === 2) {
+            const startDate = new Date(data.datesandtimes[0]).toLocaleString([], {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            const endDate = new Date(data.datesandtimes[1]).toLocaleString([], {
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            document.getElementById('hackathon-period').textContent = `${startDate} - ${endDate}`;
         }
 
-        if (data.data_exists === false || !data.project_links || data.project_links.length === 0) {
-            detailInfoDiv.innerHTML = `<p><i class="fa-solid fa-info-circle"></i> No project data has been fetched or found for this hackathon yet</p>`;
-            return;
-        }
-
-        let basicInfoHtml = '';
-        let datesHtml = "Not available";
-        if (data.datesandtimes && Array.isArray(data.datesandtimes) && data.datesandtimes.length === 2) {
-            try {
-                // clean formatting
-                const startDate = new Date(data.datesandtimes[0]).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                const endDate = new Date(data.datesandtimes[1]).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                datesHtml = `<strong>Period:</strong> ${startDate} - ${endDate}`;
-            } catch (e) { console.warn("error formatting dates:", e); }
-        }
-
-        basicInfoHtml = `
-            <p><strong>Last Fetched:</strong> ${data.last_scraped_at ? new Date(data.last_scraped_at).toLocaleString() : 'Never'}</p>
-            <p>${datesHtml}</p>
-            <p><strong>Total Projects Processed:</strong> ${data.project_links ? data.project_links.length : 'N/A'}</p>
-        `;
-
-        // projects that are flagged or don't have a github link in them
-        const flaggedProjects = [];
-        const naGithubProjects = [];
-
+        // update stats
         const projectLinks = data.project_links || [];
         const githubLinks = data.github_links || [];
         const commitStatus = data.commit_validity_status || [];
 
-        // indexing is correlated between projectLinks, githubLinks, and commitStatus
-        for (let i = 0; i < projectLinks.length; i++) {
-            const projectLink = projectLinks[i];
-            const githubLink = githubLinks.length > i ? githubLinks[i] : "Data missing";
-            const status = commitStatus.length > i ? commitStatus[i] : "Data missing";
+        document.getElementById('total-projects-count').textContent = projectLinks.length;
 
-            if (status === false) {
-                flaggedProjects.push({ projectLink, githubLink });
-            } else if (status === "NA") {
-                naGithubProjects.push({ projectLink, githubLink });
+        const flaggedCount = commitStatus.filter(status => status === false).length;
+        document.getElementById('flagged-projects-count').textContent = flaggedCount;
+
+        const missingGithubCount = commitStatus.filter(status => status === "NA").length;
+        document.getElementById('missing-github-count').textContent = missingGithubCount;
+
+        // create dropdown for missing GitHub projects
+        const missingGithubProjects = [];
+        for (let i = 0; i < projectLinks.length; i++) {
+            if (commitStatus[i] === "NA") {
+                missingGithubProjects.push({
+                    projectLink: projectLinks[i],
+                    githubLink: githubLinks[i] || "no GitHub link found"
+                });
             }
         }
 
-        // dropdown menu for flagged projs
-        let flaggedProjectsHtml = '';
+        let missingGithubHtml;
+        if (missingGithubProjects.length > 0) {
+            const listItems = missingGithubProjects.map(item => `
+            <li class="project-item missing-link">
+                <a href="${item.projectLink}" target="_blank" class="project-name">
+                    ${item.projectLink.substring(item.projectLink.lastIndexOf('/') + 1)}
+                </a>
+                <div class="project-status">${item.githubLink}</div>
+            </li>
+        `).join('');
+
+            missingGithubHtml = `
+            <details class="projects-dropdown missing-github-dropdown" open>
+                <summary>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    ${missingGithubProjects.length} project(s) missing GitHub links
+                    <span class="dropdown-arrow"></span>
+                </summary>
+                <ul class="project-list">${listItems}</ul>
+            </details>
+        `;
+        } else {
+            missingGithubHtml = `
+            <div class="status-success">
+                <i class="fas fa-check-circle"></i> All projects have GitHub links available
+            </div>
+        `;
+        }
+        document.getElementById('missing-github-projects-container').innerHTML = missingGithubHtml;
+
+        // create dropdown for flagged projects (commits outside timeframe)
+        const flaggedProjects = [];
+        for (let i = 0; i < projectLinks.length; i++) {
+            if (commitStatus[i] === false) {
+                flaggedProjects.push({
+                    projectLink: projectLinks[i],
+                    githubLink: githubLinks[i] || "no GitHub link found"
+                });
+            }
+        }
+
+        let flaggedProjectsHtml;
         if (flaggedProjects.length > 0) {
-            const listItems = flaggedProjects.map(item => {
-                const ghLinkText = (item.githubLink && item.githubLink !== "no GitHub link found" && item.githubLink !== "Data missing")
-                    ? `<a href="${item.githubLink}" target="_blank" class="project-entry-github">GitHub: ${item.githubLink.split('/').slice(-2).join('/')}</a>`
-                    : `<span class="project-entry-github no-github-text">(GitHub: Not found)</span>`;
-                return `<li>
-                            <a href="${item.projectLink}" target="_blank" class="project-entry-devpost">Project: ${item.projectLink.substring(item.projectLink.lastIndexOf('/') + 1)}</a>
-                            ${ghLinkText}
-                        </li>`;
-            }).join('');
+            const listItems = flaggedProjects.map(item => `
+            <li class="project-item flagged-project">
+                <a href="${item.projectLink}" target="_blank" class="project-name">
+                    ${item.projectLink.substring(item.projectLink.lastIndexOf('/') + 1)}
+                </a>
+                <div class="project-status">
+                    ${item.githubLink === "no GitHub link found" ?
+                    "No GitHub link found" :
+                    `<a href="${item.githubLink}" target="_blank">View GitHub</a>`}
+                </div>
+            </li>
+        `).join('');
 
             flaggedProjectsHtml = `
-                <details id="flagged-projects-details">
-                    <summary>${flaggedProjects.length} project(s) flagged (commits outside timeframe)</summary>
-                    <ul>${listItems}</ul>
-                </details>
-            `;
+            <details class="projects-dropdown flagged-projects-dropdown" open>
+                <summary>
+                    <i class="fas fa-clock"></i>
+                    ${flaggedProjects.length} project(s) with commits outside timeframe
+                    <span class="dropdown-arrow"></span>
+                </summary>
+                <ul class="project-list">${listItems}</ul>
+            </details>
+        `;
         } else {
-            flaggedProjectsHtml = `<p><i class="fa-solid fa-check-circle" style="color: green;"></i> No projects flagged for commiting outside the timeframe!</p>`;
+            flaggedProjectsHtml = `
+            <div class="status-success">
+                <i class="fas fa-check-circle"></i> No projects with commits outside the timeframe
+            </div>
+        `;
+        }
+        document.getElementById('flagged-projects-container').innerHTML = flaggedProjectsHtml;
+
+        // update data status
+        let statusHtml = `
+        <div class="status-info">
+            <i class="fas fa-info-circle"></i> Data last fetched: 
+            ${data.last_scraped_at ? new Date(data.last_scraped_at).toLocaleString() : 'Never'}
+        </div>
+    `;
+
+        if (data.project_links && data.project_links.length > 0) {
+            statusHtml += `
+            <div class="status-success">
+                <i class="fas fa-check-circle"></i> ${data.project_links.length} projects processed
+            </div>
+        `;
         }
 
-        // dropdown menu for NA github links
-        let naGithubProjectsHtml = '';
-        if (naGithubProjects.length > 0) {
-            const listItems = naGithubProjects.map(item => {
-                const ghText = (item.githubLink === "no GitHub link found" || item.githubLink === "Data missing")
-                    ? `<span class="project-entry-github no-github-text">(No GitHub link found on Devpost project page)</span>`
-                    : `<span class="project-entry-github no-github-text">(GitHub status: ${item.githubLink})</span>`;
-
-                return `<li>
-                            <a href="${item.projectLink}" target="_blank" class="project-entry-devpost">Project: ${item.projectLink.substring(item.projectLink.lastIndexOf('/') + 1)}</a>
-                            ${ghText}
-                        </li>`;
-            }).join('');
-
-            naGithubProjectsHtml = `
-                <details id="na-github-projects-details">
-                    <summary>${naGithubProjects.length} project(s) where GitHub link was not found on Devpost</summary>
-                    <ul>${listItems}</ul>
-                </details>
-            `;
-        } else {
-            naGithubProjectsHtml = `<p><i class="fa-solid fa-check-circle" style="color: green;"></i> GitHub links were found for all applicable projects!</p>`;
-        }
-
-        // combine all details
-        detailInfoDiv.innerHTML = basicInfoHtml + flaggedProjectsHtml + naGithubProjectsHtml;
+        document.getElementById('data-status-container').innerHTML = statusHtml;
     }    
 
     // call our apis to get data

@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>HackVerify</title>
+    <title>Submit Hackathon - HackVerify</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../static/styles.css">
     <link rel="icon" type="image/x-icon" href="../static/images/favicon.ico">
@@ -14,7 +14,8 @@
 
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2>hackverify</h2>
+            <img src="../static/images/logo-icon.png" alt="HackVerify" class="sidebar-logo">
+            <h2>HackVerify</h2>
         </div>
 
         <div class="sidebar-tab active" id="submit-hackathon-tab">
@@ -33,31 +34,96 @@
 
     <div class="main-content">
         <div id="submit-hackathon-view" class="view-container">
-            <div class="container">
-                <header>
-                    <h1>Welcome, {{ user.full_name or user.email }}!</h1>
-                </header>
-                <div class="dashboard-content">
-                    <div class="spacer"></div>
-                    <div class="form-container">
-                        <form id="verificationForm" class="main-form">
+            <div class="dashboard-container">
+                <div class="dashboard-header">
+                    <div class="user-greeting">
+                        <h1>Welcome back, <span class="highlight">{{ user.full_name or user.email }}</span></h1>
+                        <p>Submit a new hackathon for verification</p>
+                    </div>
+                </div>
+
+                <div class="form-container">
+                    <form id="verificationForm" class="main-form">
+                        <div class="form-card">
+                            <h2 class="form-title">
+                                <i class="fas fa-trophy"></i> Hackathon Information
+                            </h2>
+
                             <div class="form-group">
-                                <label for="devpost">Devpost Link</label>
-                                <input type="url" id="devpost" placeholder="ex: https://cuhacking6.devpost.com"
-                                    required>
-                                <label for="website">Hackathon's Website</label>
-                                <input type="url" id="website" placeholder="ex: https://cuhacking.ca" required>
+                                <label for="devpost">
+                                    <i class="fas fa-link"></i> Devpost Link
+                                </label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-globe input-icon"></i>
+                                    <input type="url" id="devpost" placeholder="https://cuhacking6.devpost.com"
+                                        required>
+                                </div>
                             </div>
-                            <button type="submit" class="submit-btn">Submit for Verification</button>
-                        </form>
-                        <div class="reminder-box">
-                            <h3>Verification Process:</h3>
-                            <p><i class="fas fa-info-circle"></i> We need to verify you're a hackathon organizer</p>
-                            <p><i class="fas fa-envelope"></i> You'll receive an email with verification results</p>
-                            <p><i class="fas fa-check-circle"></i> Once verified, you can start cheat checking!</p>
-                            <h4>To make verfication smooth:</h4>
-                            <p>1. Your name's listed on the hackathon website</p>
-                            <p>2. Hackathon has good social media presence</p>
+
+                            <div class="form-group">
+                                <label for="website">
+                                    <i class="fas fa-laptop"></i> Hackathon Website
+                                </label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-globe input-icon"></i>
+                                    <input type="url" id="website" placeholder="https://cuhacking.ca" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-paper-plane"></i> Submit for Verification
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="info-card">
+                        <div class="card-header">
+                            <i class="fas fa-info-circle"></i>
+                            <h3>Verification Process</h3>
+                        </div>
+
+                        <div class="process-item">
+                            <div class="process-icon success">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div class="process-content">
+                                <h4>Identity Verification</h4>
+                                <p>We verify you're an official hackathon organizer</p>
+                            </div>
+                        </div>
+
+                        <div class="process-item">
+                            <div class="process-icon warning">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="process-content">
+                                <h4>Email Confirmation</h4>
+                                <p>You'll receive verification results via email</p>
+                            </div>
+                        </div>
+
+                        <div class="process-item">
+                            <div class="process-icon primary">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="process-content">
+                                <h4>Start Analyzing</h4>
+                                <p>Once verified, you can begin project verification</p>
+                            </div>
+                        </div>
+
+                        <div class="verification-tips">
+                            <h4><i class="fas fa-lightbulb"></i> Tips for Smooth Verification</h4>
+                            <ul class="tips-list">
+                                <li>
+                                    <i class="fas fa-check-circle"></i>
+                                    Ensure your name is listed on the hackathon website
+                                </li>
+                                <li>
+                                    <i class="fas fa-check-circle"></i>
+                                    Hackathon should have active social media presence
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -65,22 +131,69 @@
         </div>
 
         <div id="hackathon-detail-view-container" class="view-container" style="display: none;">
-            <div class="container">
-                <header>
-                    <h1 id="hackathon-detail-name"></h1>
-                    <p><a id="hackathon-detail-devpost-link" href="#" target="_blank" rel="noopener noreferrer">View on
-                            Devpost</a></p>
+            <div class="hackathon-dashboard-container">
+                <header class="hackathon-header">
+                    <h1 id="hackathon-detail-name">cuhacking6</h1>
+                    <div class="hackathon-meta">
+                        <span class="last-fetched"><i class="fas fa-sync-alt"></i>Last Fetched: <strong
+                                id="last-fetched-time">7/11/2025, 12:39:27 PM</strong></span>
+                        <a id="hackathon-detail-devpost-link" href="#" target="_blank" rel="noopener noreferrer"
+                            class="devpost-link">
+                            <i class="fas fa-external-link-alt"></i> View on Devpost
+                        </a>
+                    </div>
+                    <div class="hackathon-period">
+                        <i class="far fa-calendar-alt"></i> Event Period: <strong id="hackathon-period">Fetch data to get period of hackathon</strong>
+                    </div>
                 </header>
+        
+                <div class="hackathon-stats">
+                    <div class="stat-card total-projects">
+                        <div class="stat-value" id="total-projects-count">73</div>
+                        <div class="stat-label">Total Projects Processed</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-value" id="flagged-projects-count">49</div>
+                        <div class="stat-label">Projects with commits outside timeframe</div>
+                    </div>
+                    <div class="stat-card error">
+                        <div class="stat-value" id="missing-github-count">13</div>
+                        <div class="stat-label">Projects with missing GitHub links</div>
+                    </div>
+                </div>
+        
                 <div class="hackathon-data-section">
-                    <div id="hackathon-detail-info">
-                        <div class="loading-details">
-                            <i class="fa-solid fa-spinner fa-spin"></i> Loading hackathon details...
+                    <div class="data-section-card">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Projects with Missing GitHub Links</h3>
+                        <div id="missing-github-projects-container">
+                            <div class="loading-details">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Loading project details...
+                            </div>
                         </div>
                     </div>
-                    <button id="fetch-data-button" class="submit-btn">
-                        <i class="fa-solid fa-cloud-download"></i> Fetch Hackathon Data
+        
+                    <div class="data-section-card">
+                        <h3><i class="fas fa-clock"></i> Projects with Commits Outside Timeframe</h3>
+                        <div id="flagged-projects-container">
+                            <div class="loading-details">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Loading project details...
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="data-section-card">
+                        <h3><i class="fas fa-database"></i> Data Status</h3>
+                        <div id="data-status-container">
+                            <p><i class="fas fa-info-circle"></i> Project details and commits will be displayed here</p>
+                        </div>
+                    </div>
+        
+                    <button id="fetch-data-button" class="submit-btn fetch-btn">
+                        <i class="fa-solid fa-cloud-download"></i> Refresh Hackathon Data
                     </button>
-                    <div id="fetch-process-status" style="margin-top: 15px;"></div>
+        
+                    <div id="fetch-process-status" class="fetch-status">
+                    </div>
                 </div>
             </div>
         </div>
