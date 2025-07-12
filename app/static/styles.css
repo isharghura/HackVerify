@@ -1131,6 +1131,10 @@ input {
         gap: 1.5rem;
     }
 
+    .logo {
+        padding: 100px 10px;
+    }
+
     .main-form,
 
     .reminder-box {
@@ -1162,10 +1166,6 @@ input {
 
     .stats-body {
         flex-direction: column;
-    }
-
-    .stat-item {
-        min-width: 100%;
     }
 
     .cta-button {
@@ -1225,9 +1225,8 @@ input {
         flex-direction: column;
     }
 
-    .form-card,
     .info-card {
-        max-width: 100%;
+        max-width: 90%;
         width: 100%;
     }
 }
