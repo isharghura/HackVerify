@@ -493,7 +493,6 @@ form {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(52, 152, 219, 0.2);
     border-radius: 50%;
     transform: scale(1);
     z-index: -1;
@@ -685,12 +684,6 @@ form {
     color: #b0b0b0;
     font-size: 1.1rem;
     margin: 0;
-}
-
-.verification-steps {
-    display: flex;
-    margin-top: 2rem;
-    gap: 1rem;
 }
 
 .step {
@@ -902,6 +895,211 @@ input {
     margin-right: 10px;
 }
 
+.hackathon-dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: #e0e0e0;
+}
+
+.hackathon-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #2d2d2d;
+}
+
+.hackathon-header h1 {
+    font-size: 2.5rem;
+    margin: 0 0 0.5rem 0;
+    color: #ffffff;
+}
+
+.hackathon-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.last-fetched {
+    color: #b0b0b0;
+    font-size: 0.95rem;
+}
+
+.last-fetched i {
+    margin-right: 0.5rem;
+    color: #3498db;
+}
+
+.devpost-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background-color: rgba(52, 152, 219, 0.1);
+    transition: all 0.3s ease;
+}
+
+.devpost-link:hover {
+    background-color: rgba(52, 152, 219, 0.2);
+    transform: translateY(-2px);
+}
+
+.hackathon-period {
+    color: #b0b0b0;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.hackathon-period i {
+    color: #f1c40f;
+}
+
+.hackathon-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    flex: 1;
+    min-width: 200px;
+    padding: 1.5rem;
+    border-radius: 10px;
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card.warning {
+    border-top: 4px solid #f39c12;
+}
+
+.stat-card.error {
+    border-top: 4px solid #e74c3c;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card.warning .stat-value {
+    color: #f39c12;
+}
+
+.stat-card.error .stat-value {
+    color: #e74c3c;
+}
+
+.stat-label {
+    font-size: 0.95rem;
+    color: #b0b0b0;
+}
+
+.data-section-card {
+    background-color: #1e1e1e;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.data-section-card h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.project-item {
+    padding: 1rem;
+    border-radius: 6px;
+    background-color: #2d2d2d;
+    transition: all 0.3s ease;
+}
+
+.project-item:hover {
+    background-color: #3d3d3d;
+    transform: translateX(5px);
+}
+
+.project-item.missing-link {
+    border-left: 4px solid #e74c3c;
+
+}
+
+.project-name {
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 0.3rem;
+}
+
+.project-status {
+    font-size: 0.9rem;
+    color: #b0b0b0;
+}
+
+.timeframe-info,
+.handwritten-info {
+    color: #b0b0b0;
+    font-size: 0.95rem;
+    padding: 0.5rem;
+}
+
+.fetch-btn {
+    margin-top: 1.5rem;
+    width: auto;
+    padding: 1rem 2rem !important;
+}
+
+.fetch-status {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: 6px;
+    background-color: #2d2d2d;
+    color: #b0b0b0;
+    display: none;
+}
+
+.fetch-status.visible {
+    display: block;
+}
+
+.fetch-status.success {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+    border-left: 4px solid #2ecc71;
+}
+
+.fetch-status.error {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    border-left: 4px solid #e74c3c;
+}
+
 @keyframes fa-spin {
     0% {
         transform: rotate(0deg);
@@ -912,7 +1110,18 @@ input {
     }
 }
 
-@media only screen and (max-width: 763px) {
+@media only screen and (max-width: 768px) {
+    .hackathon-stats {
+        flex-direction: column;
+    }
+
+    .stat-card {
+        min-width: 100%;
+    }
+
+    .hackathon-header h1 {
+        font-size: 2rem;
+    }
     .container {
         padding: 1.5rem;
     }
@@ -1000,6 +1209,15 @@ input {
         align-items: flex-start;
         gap: 0.5rem;
     }
+    .hackathon-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .devpost-link {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 @media (max-width: 992px) {
@@ -1012,4 +1230,263 @@ input {
         max-width: 100%;
         width: 100%;
     }
+}
+
+details {
+    margin: 1rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #2d2d2d;
+    transition: all 0.3s ease;
+}
+
+details[open] {
+    background-color: #3d3d3d;
+}
+
+details summary {
+    padding: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    list-style: none;
+    transition: background-color 0.3s ease;
+}
+
+details summary::-webkit-details-marker {
+    display: none;
+}
+
+details summary:after {
+    content: '+';
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+details[open] summary:after {
+    content: '-';
+}
+
+details summary:hover {
+    background-color: #3d3d3d;
+}
+
+details ul {
+    padding: 0 1rem 1rem 1rem;
+    margin: 0;
+    list-style: none;
+}
+
+details li {
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #444;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+details li:last-child {
+    border-bottom: none;
+}
+
+#flagged-projects-details {
+    border-left: 4px solid #f39c12;
+}
+
+#flagged-projects-details summary {
+    color: #f39c12;
+}
+
+#na-github-projects-details {
+    border-left: 4px solid #e74c3c;
+}
+
+#na-github-projects-details summary {
+    color: #e74c3c;
+}
+
+.project-entry-devpost {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.project-entry-devpost:hover {
+    color: #2980b9;
+    text-decoration: underline;
+}
+
+.project-entry-github {
+    color: #2ecc71;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+.project-entry-github:hover {
+    color: #27ae60;
+    text-decoration: underline;
+}
+
+.no-github-text {
+    color: #b0b0b0;
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+.status-info,
+.status-success,
+.status-error {
+    padding: 0.8rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.status-info {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+    border-left: 4px solid #3498db;
+}
+
+.status-success {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+    border-left: 4px solid #2ecc71;
+}
+
+.status-error {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    border-left: 4px solid #e74c3c;
+}
+
+.projects-dropdown {
+    background-color: #2d2d2d;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.projects-dropdown[open] {
+    background-color: #3d3d3d;
+}
+
+.projects-dropdown summary {
+    padding: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    list-style: none;
+    transition: background-color 0.3s ease;
+}
+
+.projects-dropdown summary::-webkit-details-marker {
+    display: none;
+}
+
+.projects-dropdown summary .dropdown-arrow {
+    transition: transform 0.3s ease;
+}
+
+.projects-dropdown[open] summary .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.projects-dropdown summary:hover {
+    background-color: #3d3d3d;
+}
+
+.projects-dropdown .project-list {
+    padding: 0 1rem;
+    margin: 0;
+    list-style: none;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.projects-dropdown .project-item {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #444;
+}
+
+.projects-dropdown .project-item:last-child {
+    border-bottom: none;
+}
+
+.missing-github-dropdown {
+    border-left: 4px solid #e74c3c;
+}
+
+.missing-github-dropdown summary {
+    color: #e74c3c;
+}
+
+.flagged-projects-dropdown {
+    border-left: 4px solid #f39c12;
+}
+
+.flagged-projects-dropdown summary {
+    color: #f39c12;
+}
+
+.project-name {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+.project-name:hover {
+    text-decoration: underline;
+}
+
+.project-status {
+    color: #b0b0b0;
+    font-size: 0.9rem;
+}
+
+.project-status a {
+    color: #2ecc71;
+    text-decoration: none;
+}
+
+.project-status a:hover {
+    text-decoration: underline;
+}
+
+.status-info,
+.status-success {
+    padding: 0.8rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-info {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+    border-left: 4px solid #3498db;
+}
+
+.status-success {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+    border-left: 4px solid #2ecc71;
+}
+
+.loading-details {
+    padding: 1rem;
+    text-align: center;
+    color: #b0b0b0;
 }

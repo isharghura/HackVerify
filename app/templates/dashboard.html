@@ -40,20 +40,6 @@
                         <h1>Welcome back, <span class="highlight">{{ user.full_name or user.email }}</span></h1>
                         <p>Submit a new hackathon for verification</p>
                     </div>
-                    <div class="verification-steps">
-                        <div class="step active">
-                            <div class="step-number">1</div>
-                            <div class="step-text">Submit Details</div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">2</div>
-                            <div class="step-text">Verification</div>
-                        </div>
-                        <div class="step">
-                            <div class="step-number">3</div>
-                            <div class="step-text">Get Started</div>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="form-container">
@@ -145,22 +131,69 @@
         </div>
 
         <div id="hackathon-detail-view-container" class="view-container" style="display: none;">
-            <div class="container">
-                <header>
-                    <h1 id="hackathon-detail-name"></h1>
-                    <p><a id="hackathon-detail-devpost-link" href="#" target="_blank" rel="noopener noreferrer">View on
-                            Devpost</a></p>
+            <div class="hackathon-dashboard-container">
+                <header class="hackathon-header">
+                    <h1 id="hackathon-detail-name">cuhacking6</h1>
+                    <div class="hackathon-meta">
+                        <span class="last-fetched"><i class="fas fa-sync-alt"></i>Last Fetched: <strong
+                                id="last-fetched-time">7/11/2025, 12:39:27 PM</strong></span>
+                        <a id="hackathon-detail-devpost-link" href="#" target="_blank" rel="noopener noreferrer"
+                            class="devpost-link">
+                            <i class="fas fa-external-link-alt"></i> View on Devpost
+                        </a>
+                    </div>
+                    <div class="hackathon-period">
+                        <i class="far fa-calendar-alt"></i> Event Period: <strong id="hackathon-period">Fetch data to get period of hackathon</strong>
+                    </div>
                 </header>
+        
+                <div class="hackathon-stats">
+                    <div class="stat-card total-projects">
+                        <div class="stat-value" id="total-projects-count">73</div>
+                        <div class="stat-label">Total Projects Processed</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-value" id="flagged-projects-count">49</div>
+                        <div class="stat-label">Projects with commits outside timeframe</div>
+                    </div>
+                    <div class="stat-card error">
+                        <div class="stat-value" id="missing-github-count">13</div>
+                        <div class="stat-label">Projects with missing GitHub links</div>
+                    </div>
+                </div>
+        
                 <div class="hackathon-data-section">
-                    <div id="hackathon-detail-info">
-                        <div class="loading-details">
-                            <i class="fa-solid fa-spinner fa-spin"></i> Loading hackathon details...
+                    <div class="data-section-card">
+                        <h3><i class="fas fa-exclamation-triangle"></i> Projects with Missing GitHub Links</h3>
+                        <div id="missing-github-projects-container">
+                            <div class="loading-details">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Loading project details...
+                            </div>
                         </div>
                     </div>
-                    <button id="fetch-data-button" class="submit-btn">
-                        <i class="fa-solid fa-cloud-download"></i> Fetch Hackathon Data
+        
+                    <div class="data-section-card">
+                        <h3><i class="fas fa-clock"></i> Projects with Commits Outside Timeframe</h3>
+                        <div id="flagged-projects-container">
+                            <div class="loading-details">
+                                <i class="fa-solid fa-spinner fa-spin"></i> Loading project details...
+                            </div>
+                        </div>
+                    </div>
+        
+                    <div class="data-section-card">
+                        <h3><i class="fas fa-database"></i> Data Status</h3>
+                        <div id="data-status-container">
+                            <p><i class="fas fa-info-circle"></i> Project details and commits will be displayed here</p>
+                        </div>
+                    </div>
+        
+                    <button id="fetch-data-button" class="submit-btn fetch-btn">
+                        <i class="fa-solid fa-cloud-download"></i> Refresh Hackathon Data
                     </button>
-                    <div id="fetch-process-status" style="margin-top: 15px;"></div>
+        
+                    <div id="fetch-process-status" class="fetch-status">
+                    </div>
                 </div>
             </div>
         </div>
