@@ -2,7 +2,7 @@
 
 Helping hackathons automate cheat checks
 
-Live at https://www.hackverify.com - try it out!
+Live at https://hackverify.vercel.app - try it out!
 
 Currently verifying hackathon organizers!
 
